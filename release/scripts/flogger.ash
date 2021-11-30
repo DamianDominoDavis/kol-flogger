@@ -1,21 +1,13 @@
-string[string] flags = {
-	"backup" 	: "copy cache to a backup",
-	"purge"		: "empty the cache",
-	"recolor"	: "change colorblind modes",
-	"help"		: "print these messages"
-};
-
-				// one minified pvp fight
+// one minified pvp fight
 record fite {
-	int A;		// 1: on attack
-				// 0: on defense
+	int A;		// value	1: on attack
+				// 			0: on defense
 	int[int] R;	// key: stance_to_int[{mini}]
-				// value: 1: you won the mini
-				//        0: you lost the mini
+				// value	1: you won the mini
+				//        	0: you lost the mini
 };
 
-// an ugly, hacky, ash-doesn't-have-enums "enum"
-// but it reduces cached file size by a bunch
+// an "enum" to minify stance strs and file sizes
 int[string] stance_to_int;
 string[int] int_to_stance;
 foreach s in current_pvp_stances() {
@@ -32,73 +24,86 @@ fite examine_fite(int lid) {
 	string[int] results = buf.xpath("//tr[@class='mini']/td[1]");
 	out.A = (fighters[0].to_lower_case() == my_name().to_lower_case()).to_int();
 	foreach i,mini in stances
-		out.R[stance_to_int[mini]] = (!(out.A.to_boolean() ^ results[i].contains_text('youwin'))).to_int();
+		out.R[stance_to_int[mini]] = (!(out.A.to_boolean() ^ results[i].contains_text("youwin"))).to_int();
 	return out;
 }
 
-int season_int;
+int season_int() {
+	static int season = 0;
+	if (season == 0) {
+		string page = visit_url("peevpee.php?place=rules", false).to_string();
+		string season_str = page.xpath("//table//table//p[1]/text()")[0];
+		matcher m = create_matcher("\(\\d+\)", season_str);
+		if (!m.find())
+			return 0;
+		season = m.group(1).to_int();
+	}
+	return season;
+}
+
+string[string] flags = {
+	"backup" 	: "copy cache to a backup",
+	"purge"		: "empty the cache",
+	"recolor"	: "change colorblind modes",
+	"help"		: "print these messages"
+};
 
 void backup() {
-	boolean created;
-	fite[int] working, backup;
-	if (!file_to_map('flogger.'+season_int+'.'+my_name().to_lower_case()+'.txt', working) || working.count() == 0) {
-		print('Nothing much to back up.', 'red');
+	string file = "flogger." + season_int() + "." + my_name().to_lower_case();
+	fite[int] memory, backup;
+	if (!file_to_map(file + ".txt", memory) || memory.count() == 0) {
+		print("Nothing much to back up.", "red");
 		return;
 	}
-	created = !file_to_map('flogger.'+season_int+'.'+my_name().to_lower_case()+'.bak', backup);
-	foreach f in working
+	boolean created = !file_to_map(file + ".bak", backup);
+	foreach f in memory
 		if (!(backup contains f))
-			backup[f] = working[f];
-	if (working.map_to_file('flogger.'+season_int+'.'+my_name().to_lower_case()+'.bak'))
-		print(`Cache copied to {created?'new ':''}backup.`);
+			backup[f] = memory[f];
+	if (memory.map_to_file(file + ".bak"))
+		print("Cache copied to " + (created ? "new " : "") + "backup.");
 	else
-		abort('failed to save backup' + 'flogger.'+season_int+'.'+my_name().to_lower_case()+'.bak');
+		abort("failed to save file" + file + ".bak");
 }
 
 void purge() {
-	fite[int] working;
-	file_to_map('flogger.'+season_int+'.'+my_name().to_lower_case()+'.txt', working);
-	foreach f in working
-		remove working[f];
-	if (working.map_to_file('flogger.'+season_int+'.'+my_name().to_lower_case()+'.txt'))
-		print('Purged.');
+	string file = "flogger." + season_int() + "." + my_name().to_lower_case() + ".txt";
+	fite[int] memory;
+	file_to_map(file, memory);
+	foreach f in memory
+		remove memory[f];
+	if (memory.map_to_file(file))
+		print("Purged.");
 	else
-		abort('failed to purge' + 'flogger.'+season_int+'.'+my_name().to_lower_case()+'.txt');
+		abort("failed to save file" + file);
 }
 
 void recolor() {
-	string[string] fmem;
-	file_to_map('flogger.' + my_name().to_lower_case() + '.pref', fmem);
-	switch (fmem['colors']) {
-		case 'nored'	: fmem['colors'] = 'nogreen'; break;
-		case 'nogreen'	: fmem['colors'] = 'noblue'; break;
-		default			: fmem['colors'] = 'nored';
+	string file = "flogger." + my_name().to_lower_case() + ".pref";
+	string[string] memory;
+	file_to_map(file, memory);
+	switch (memory["colors"]) {
+		case "nored"	: memory["colors"] = "nogreen";	break;
+		case "nogreen"	: memory["colors"] = "noblue";	break;
+		default			: memory["colors"] = "nored";
 	}
-	if (fmem.map_to_file('flogger.' + my_name().to_lower_case() + '.pref'))
-		print('Changed color mode.');
+	if (memory.map_to_file(file))
+		print("Changed color mode.");
 	else
-		abort('couldn\'t update file ' + 'flogger.' + my_name().to_lower_case() + '.pref');
+		abort("failed to save file" + file);
 }
 
 void help() {
-	foreach word in flags
-		print(`{__FILE__.substring(0,__FILE__.length()-4)} {word} -- {flags[word]}`);
+	foreach f in flags
+		print("flogger " + f + " -- " + flags[f]);
 }
 
 void main(string args) {
-	if (args.split_string(' ').count() != 1 || !(flags contains args)) {
+	if (args.split_string(' ').count() != 1 || !(flags contains args.to_lower_case())) {
 		print('flogger what?', 'red');
 		help();
 		return;
 	}
-	string page = visit_url('peevpee.php?place=rules',false).to_string();
-	string season_str = page.xpath('//table//table//p[1]/text()')[0];
-	matcher m = '\(\\d+\)'.create_matcher(season_str);
-	if (!m.find()) {
-		print('Is there even a pvp season right now? Chill.', 'red');
-		return;
-	}
-	season_int = m.group(1).to_int();
-
+	if ($strings[backup,purge] contains args && season_int() == 0)
+		print("It's off-season.", "red");
 	call void args();
 }
