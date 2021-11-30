@@ -2,45 +2,16 @@
 // learn over one thousand fights
 // which kung fu is best
 
-				// one minified pvp fight
-record fite {
-	int A;		// 1: on attack
-				// 0: on defense
-	int[int] R;	// key: stance_to_int[{mini}]
-				// value: 1: you won the mini
-				//        0: you lost the mini
-};
-
-// an ugly, hacky, ash-doesn't-have-enums "enum"
-// but it reduces cached file size by a bunch
-int[string] stance_to_int;
-string[int] int_to_stance;
-foreach s in current_pvp_stances() {
-	int_to_stance[int_to_stance.count()] = s;
-	stance_to_int[s] = int_to_stance.count() - 1;
-}
-
-// fite constructor, takes uids from pvp log page links
-fite examine_fite(int lid) {
-	fite out;
-	buffer buf = visit_url("peevpee.php?action=log&ff=1&lid="+lid+"&place=logs&pwd", false);
-	string[int] fighters = buf.xpath("//div[@class='fight']/a/text()");
-	string[int] stances = buf.xpath("//tr[@class='mini']/td/center/b/text()");
-	string[int] results = buf.xpath("//tr[@class='mini']/td[1]");
-	out.A = (fighters[0].to_lower_case() == my_name().to_lower_case()).to_int();
-	foreach i,mini in stances
-		out.R[stance_to_int[mini]] = (!(out.A.to_boolean() ^ results[i].contains_text('youwin'))).to_int();
-	return out;
-}
+import <flogger.ash>
 
 // select a color {x}% along the even linear gradient from A to Neutral to B
 // return css-appropriate color value
-string colorize(string key, int x) {
+string colorize(int x) {
 	string[string] fmem;
-//	file_to_map('flogger.'+my_name().to_lower_case()+'.pref', fmem);
-	if (key == 'nored' || fmem['radio'] == 'nored')
+	file_to_map('flogger.'+my_name().to_lower_case()+'.pref', fmem);
+	if (fmem['colors'] == 'nored')
 		return `rgb({50-(x>50?x-50:50-x)}%,{x}%,{100-x}%)`;
-	if (key=='nogreen' || fmem['radio'] == 'nogreen')
+	if (fmem['colors'] == 'nogreen')
 		return `rgb({100-x}%,{50-(x>50?x-50:50-x)}%,{x}%)`;
 	return `rgb({100-x}%,{x}%,{50-(x>50?x-50:50-x)}%)`;
 }
@@ -100,7 +71,7 @@ void main() {
 				scored++;
 				if (got > 0 && got % 50 == 0) {
 					print("Flogger cached "+got+" more fites");
-					map_to_file(fites, 'fites_'+season_int+'.txt');
+					map_to_file(fites, 'flogger.'+season_int+'.'+my_name().to_lower_case()+'.txt');
 				}
 			}
 		}
@@ -126,7 +97,7 @@ void main() {
 					x = (100 * scores[mini,0,1]) / (scores[mini,0,1] + scores[mini,0,0]);
 				string tattrs = 'align="center"';
 				string spattrs = 'style="background-color:';
-				s = s.append_child('<tr class="small">(.+)</tr>', `<td {tattrs}><span {spattrs}{colorize('noblue',a)+';"'}>{a}%</span></td><td {tattrs}><span {spattrs}{colorize('noblue',x)+';"'}>{x}%</span></td>`);
+				s = s.append_child('<tr class="small">(.+)</tr>', `<td {tattrs}><span {spattrs}{colorize(a)+';"'}>{a}%</span></td><td {tattrs}><span {spattrs}{colorize(x)+';"'}>{x}%</span></td>`);
 			}
 			s.write();
 		}
