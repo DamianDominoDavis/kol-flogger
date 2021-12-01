@@ -53,7 +53,7 @@ void main() {
 					got++;
 				}
 				foreach mini,winner in fites[L].R
-					scores[int_to_stance[mini], fites[L].A, winner]++;
+					scores[char_to_stance[mini], fites[L].A, winner]++;
 				scored++;
 				if (got > 0 && got % 50 == 0) {
 					print("Flogger cached "+got+" more fites");
@@ -81,7 +81,6 @@ void main() {
 					a = (100 * scores[mini,1,1]) / (scores[mini,1,1] + scores[mini,1,0]);
 				if (scores[mini,0,1] + scores[mini,0,0] > 0)
 					x = (100 * scores[mini,0,1]) / (scores[mini,0,1] + scores[mini,0,0]);
-				string spattrs = 'style="background-color:';
 				s = s.append_child('<tr class="small">(.+)</tr>', `<td align="center"><span style="background-color:{colorize(a)};"}>{a}%</span></td><td align="center"><span style="background-color:{colorize(x)};"}>{x}%</span></td>`);
 			}
 			s.write();

@@ -1,18 +1,18 @@
 // one minified pvp fight
 record fite {
-	int A;		// value	1: on attack
-				// 			0: on defense
-	int[int] R;	// key: stance_to_int[{mini}]
-				// value	1: you won the mini
-				//        	0: you lost the mini
+	int A;			// value	1: on attack
+					// 			0: on defense
+	int[string] R;	// key: stance_to_int[{mini}]
+					// value	1: you won the mini
+					//        	0: you lost the mini
 };
 
 // an "enum" to minify stance strs and file sizes
-int[string] stance_to_int;
-string[int] int_to_stance;
+string[string] stance_to_char;
+string[string] char_to_stance;
 foreach s in current_pvp_stances() {
-	int_to_stance[int_to_stance.count()] = s;
-	stance_to_int[s] = int_to_stance.count() - 1;
+	stance_to_char[s] = to_string(stance_to_char.count(), "%X");
+	char_to_stance[stance_to_char[s]] = s;
 }
 
 // fite constructor, takes uids from pvp log page links
@@ -24,7 +24,7 @@ fite examine_fite(int lid) {
 	string[int] results = buf.xpath("//tr[@class='mini']/td[1]");
 	out.A = (fighters[0].to_lower_case() == my_name().to_lower_case()).to_int();
 	foreach i,mini in stances
-		out.R[stance_to_int[mini]] = (!(out.A.to_boolean() ^ results[i].contains_text("youwin"))).to_int();
+		out.R[stance_to_char[mini]] = (!(out.A.to_boolean() ^ results[i].contains_text("youwin"))).to_int();
 	return out;
 }
 
