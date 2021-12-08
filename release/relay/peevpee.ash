@@ -66,22 +66,49 @@ void main() {
 	// save, render
 	finally {
 		map_to_file(fites, file);
-		page = page.append_child("<head>(.+)</head>", "<style>table table table tr td { vertical-align: middle; padding: 0.5px 2px; } table table table td span { display:block; width:5em; border: 1px solid black; padding: 2px 0; font-weight: bold; color: white; text-shadow: 0px 0px 5px black;} </style>");
+		page = page.append_child("<head>(.+)</head>",
+			"<style>"+
+			"table table table tr td { vertical-align: middle; padding: 0.5px 2px; } "+
+			"table table table td span { display:block; width:8em; border: 1px solid black; padding: 2px 0; font-weight: bold; color: white; text-shadow: 0px 0px 5px black;}"+
+			"</style>"
+		);
 		string intro = page.split_string("<tr><th>Name</th>")[0];
 		string[int] mid = page.xpath("//table//table//table//tr");
 		string outro = "</table><p><small>" + page.split_string("</td></tr></table><p><small>")[1];
-		
 		intro.write();
+
+		int attacks, defends;
+		foreach stance,attacker,wins in scores
+			if (attacker == 1)
+				attacks += scores[stance,attacker,wins];
+			else
+				defends += scores[stance,attacker,wins];
 		foreach i,s in mid {
 			if (i == 0)
-				s = s.append_child("<tr>(.+)</tr>", "<th>Attacking</th><th>Defending</th>");	
+				s = s.append_child("<tr>(.+)</tr>", "<th>Attacking</th><th>Defending</th>");
 			else foreach mini in current_pvp_stances() if (s.contains_text(mini) || s.contains_text(mini.replace_string("'",'&apos;'))) {
-				int a,x;
-				if (scores[mini,1,1] + scores[mini,1,0] > 0)
-					a = (100 * scores[mini,1,1]) / (scores[mini,1,1] + scores[mini,1,0]);
-				if (scores[mini,0,1] + scores[mini,0,0] > 0)
-					x = (100 * scores[mini,0,1]) / (scores[mini,0,1] + scores[mini,0,0]);
-				s = s.append_child('<tr class="small">(.+)</tr>', `<td align="center"><span style="background-color:{colorize(a)};"}>{a}%</span></td><td align="center"><span style="background-color:{colorize(x)};"}>{x}%</span></td>`);
+				float a,x;
+				int b,c,y,z;
+				if (scores[mini,1,1] + scores[mini,1,0] > 0) {
+					b = scores[mini,1,1];
+					c = scores[mini,1,0];
+					a = (100 * b) / (b + c);
+				}
+				if (scores[mini,0,1] + scores[mini,0,0] > 0) {
+					y = scores[mini,0,1];
+					z = scores[mini,0,0];
+					x = (100 * y) / (y + z);
+				}
+				s = s.append_child('<tr class="small">(.+)</tr>',
+					`<td align="center" style="white-space: nowrap;">`+
+						`{b}:{c} <strong>({to_string(100*(b+c).to_float()/attacks, "%.1f")}%)</strong>`+
+						`<span style="background-color:{colorize(a)};"}>{a}%</span>`+
+					`</td>`+
+					`<td align="center" style="white-space: nowrap;">`+
+						`{y}:{z} <strong>({to_string(100*(y+z).to_float()/defends, "%.1f")}%)</strong>`+
+						`<span style="background-color:{colorize(x)};"}>{x}%</span>`+
+					`</td>`
+				);
 			}
 			s.write();
 		}
