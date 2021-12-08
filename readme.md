@@ -11,4 +11,4 @@ Try it out! `svn checkout https://github.com/DamianDominoDavis/kol-flogger/trunk
 
 Now with colorblind modes! Try CLI `flogger help`
 
-<a href="https://github.com/DamianDominoDavis/kol-flogger/blob/main/example.png?raw=true"><img alt="Example" src="https://github.com/DamianDominoDavis/kol-flogger/blob/main/example.png?raw=true" width="500" height="382"/></a>
+<a href="https://raw.githubusercontent.com/DamianDominoDavis/kol-flogger/6c9f85f9e2786a58a84622f75e4776689a243025/example.png"><img alt="Example" src="https://raw.githubusercontent.com/DamianDominoDavis/kol-flogger/6c9f85f9e2786a58a84622f75e4776689a243025/example.png" width="697" height="673"/></a>
