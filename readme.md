@@ -1,11 +1,8 @@
 # Flogger
 
-*You might not be a winner at everything,
-you might not be a loser at everything;
-but you won't find out what you're good at
-if they tell you you're good at everything.*
+*You might not be a winner at everything, you might not be a loser at everything; but you won't find out what you're good at if they tell you you're good at everything.*
 
-**Flogger** for <a href="https://github.com/kolmafia/kolmafia">Kolmafia</a> examines your recent pvp fights and adds recent win rate columns to the Information Booth. Caches fights to Kolmafia's /data folder, so it can take a minute the first time it runs. Progress will still save if you need to cancel early with Escape.
+**Flogger** for <a href="https://github.com/kolmafia/kolmafia">Kolmafia</a> examines your recent pvp fights and adds recent win rate columns to the Information Booth. Cached fights load instantly from /data, and then Flogger processes up to 200~500 new fights per minute. (The cache will save, even if you cancel early from Kolmafia with Escape.)
 
 Try it out! `svn checkout https://github.com/DamianDominoDavis/kol-flogger/trunk/release/`
 
