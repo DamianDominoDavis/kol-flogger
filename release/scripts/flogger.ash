@@ -19,12 +19,22 @@ foreach s in current_pvp_stances() {
 fite examine_fite(int lid) {
 	fite out;
 	buffer buf = visit_url("peevpee.php?action=log&ff=1&lid="+lid+"&place=logs&pwd", false);
-	string[int] fighters = buf.xpath("//div[@class='fight']/a/text()");
-	string[int] stances = buf.xpath("//tr[@class='mini']/td/center/b/text()");
-	string[int] results = buf.xpath("//tr[@class='mini']/td[1]");
-	out.A = (fighters[0].to_lower_case() == my_name().to_lower_case()).to_int();
-	foreach i,mini in stances
-		out.R[stance_to_char[mini]] = (!(out.A.to_boolean() ^ results[i].contains_text("youwin"))).to_int();
+	if (buf.xpath("//div[@class='fight']/a/text()").count() >= 2) {
+		string[int] fighters = buf.xpath("//div[@class='fight']/a/text()");
+		string[int] stances = buf.xpath("//tr[@class='mini']/td/center/b/text()");
+		string[int] results = buf.xpath("//tr[@class='mini']/td[1]");
+		out.A = (fighters[0].to_lower_case() == my_name().to_lower_case()).to_int();
+		foreach i,mini in stances
+			out.R[stance_to_char[mini]] = (!(out.A.to_boolean() ^ results[i].contains_text("youwin"))).to_int();
+	}
+	else {
+		string[int] fighters = buf.xpath("//table//table//table//table//tr//a/text()");	
+		string[int] stances = buf.xpath("//table//table//table//table//tr/td[1]//b/text()");
+		string[int] results = buf.xpath("//table//table//table//table//tr/td[2]//b/text()");
+		out.A = (fighters[0].to_lower_case() == my_name().to_lower_case()).to_int();
+		foreach i,winner in results
+			out.R[stance_to_char[stances[i]]] = (!(out.A.to_boolean() ^ (results[i].to_lower_case() == my_name().to_lower_case()))).to_int();
+		}
 	return out;
 }
 
