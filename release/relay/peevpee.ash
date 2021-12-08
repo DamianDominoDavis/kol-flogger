@@ -17,8 +17,9 @@ string colorize(int x) {
 	return `rgb({100-x}%, {x}%, {50-(x>50?x-50:50-x)}%)`;
 }
 
-// like jquery, but gross
-// tag_pattern takes exactly one capture group
+// knockoff jquery
+// capture tag inner content
+// append elements
 string append_child(string original, string tag_patten, string content) {
 	matcher tag_matcher = tag_patten.create_matcher(original);
 	if (tag_matcher.find())
@@ -28,7 +29,9 @@ string append_child(string original, string tag_patten, string content) {
 }
 
 void main() {
-	// override only at the rules page, when a season is on, and if we have participated
+	// override the rules
+	// only when it's seasonal
+	// and we've been fighting
 	string page = visit_url().to_string();
 	string[int,int] log = visit_url("peevpee.php?place=logs&mevs=0&oldseason=0&showmore=1", false).group_string("action=log&ff=1&lid=\(\\d\+\)&place=logs");
 	if (form_field("place") != "rules" || season_int() == 0 || log.count() == 0) {
@@ -40,32 +43,38 @@ void main() {
 	// tally up wins and losses
 	// save to file sometimes
 	string file = "flogger." + season_int() + "." + my_name().to_lower_case() + ".txt";
-	fite[int] fites;
-	file_to_map(file, fites);
-	int[string,int,int] scores;
+	string[int] memory;
+	file_to_map(file, memory);
+	int[string,boolean,boolean] scores;
 	int got, scored;
 	try {
 		foreach idx,grp,lid in log {
 			if (grp==1) {
 				int L = lid.to_int();
-				if (!(fites contains L)) {
-					fites[L] = examine_fite(L);
+				fite f;
+				if (!(memory contains L)) {
+					f = examine_fite(L);
+					memory[L] = f.to_string();
 					got++;
 				}
-				foreach mini,winner in fites[L].R
-					scores[char_to_stance[mini], fites[L].A, winner]++;
+				else
+					f = memory[L].from_string();
+				foreach mini,winner in f.rounds
+					scores[mini, f.attacking, winner]++;
 				scored++;
 				if (got > 0 && got % 50 == 0) {
 					print("Flogger cached "+got+" more fites");
-					map_to_file(fites, file);
+					map_to_file(memory, file);
 				}
 			}
 		}
 	}
 
-	// save, render
+	// save it all to file
+	// render extra table cells
+	// see what you have wrought
 	finally {
-		map_to_file(fites, file);
+		map_to_file(memory, file);
 		page = page.append_child("<head>(.+)</head>",
 			"<style>"+
 			"table table table tr td { vertical-align: middle; padding: 0.5px 2px; } "+
@@ -78,25 +87,25 @@ void main() {
 		intro.write();
 
 		int attacks, defends;
-		foreach stance,attacker,wins in scores
-			if (attacker == 1)
-				attacks += scores[stance,attacker,wins];
+		foreach mini,attacking,win in scores
+			if (attacking)
+				attacks += scores[mini,attacking,win];
 			else
-				defends += scores[stance,attacker,wins];
+				defends += scores[mini,attacking,win];
 		foreach i,s in mid {
 			if (i == 0)
 				s = s.append_child("<tr>(.+)</tr>", "<th>Attacking</th><th>Defending</th>");
 			else foreach mini in current_pvp_stances() if (s.contains_text(mini) || s.contains_text(mini.replace_string("'",'&apos;'))) {
 				float a,x;
 				int b,c,y,z;
-				if (scores[mini,1,1] + scores[mini,1,0] > 0) {
-					b = scores[mini,1,1];
-					c = scores[mini,1,0];
+				if (scores[mini,true,true] + scores[mini,true,false] > 0) {
+					b = scores[mini,true,true];
+					c = scores[mini,true,false];
 					a = (100 * b) / (b + c);
 				}
-				if (scores[mini,0,1] + scores[mini,0,0] > 0) {
-					y = scores[mini,0,1];
-					z = scores[mini,0,0];
+				if (scores[mini,false,true] + scores[mini,false,false] > 0) {
+					y = scores[mini,false,true];
+					z = scores[mini,false,false];
 					x = (100 * y) / (y + z);
 				}
 				s = s.append_child('<tr class="small">(.+)</tr>',

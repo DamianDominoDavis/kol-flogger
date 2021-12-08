@@ -1,13 +1,9 @@
-// one minified pvp fight
 record fite {
-	int A;			// value	1: on attack
-					// 			0: on defense
-	int[string] R;	// key: stance_to_int[{mini}]
-					// value	1: you won the mini
-					//        	0: you lost the mini
+	boolean attacking;
+	boolean[string] rounds;
 };
 
-// an "enum" to minify stance strs and file sizes
+// minified stance "enum"
 string[string] stance_to_char;
 string[string] char_to_stance;
 foreach s in current_pvp_stances() {
@@ -23,18 +19,35 @@ fite examine_fite(int lid) {
 		string[int] fighters = buf.xpath("//div[@class='fight']/a/text()");
 		string[int] stances = buf.xpath("//tr[@class='mini']/td/center/b/text()");
 		string[int] results = buf.xpath("//tr[@class='mini']/td[1]");
-		out.A = (fighters[0].to_lower_case() == my_name().to_lower_case()).to_int();
+		out.attacking = (my_name().to_lower_case() == fighters[0].to_lower_case());
 		foreach i,mini in stances
-			out.R[stance_to_char[mini]] = (!(out.A.to_boolean() ^ results[i].contains_text("youwin"))).to_int();
+			out.rounds[mini] = (!(out.attacking ^ results[i].contains_text("youwin")));
 	}
 	else {
 		string[int] fighters = buf.xpath("//table//table//table//table//tr//a/text()");	
 		string[int] stances = buf.xpath("//table//table//table//table//tr/td[1]//b/text()");
 		string[int] results = buf.xpath("//table//table//table//table//tr/td[2]//b/text()");
-		out.A = (fighters[0].to_lower_case() == my_name().to_lower_case()).to_int();
+		out.attacking = (my_name().to_lower_case() == fighters[0].to_lower_case());
 		foreach i,winner in results
-			out.R[stance_to_char[stances[i]]] = (!(out.A.to_boolean() ^ (results[i].to_lower_case() == my_name().to_lower_case()))).to_int();
+			out.rounds[stances[i]] = (!(out.attacking ^ (my_name().to_lower_case() == results[i].to_lower_case())));
 		}
+	return out;
+}
+
+//fite constructor, from fite.to_string()
+fite from_string(string s) {
+	fite out;
+	out.attacking = (s.char_at(0) == 'a');
+	string[int,int] groups = s.group_string('([0-9A-F]{2})');
+	foreach i in groups
+		out.rounds[char_to_stance[groups[i,0].char_at(0)]] = (groups[i,0].char_at(1) == '1');
+	return out;
+}
+
+string to_string(fite f) {
+	string out = (f.attacking? 'a':'d');
+	foreach mini,winner in f.rounds
+		out += stance_to_char[mini] + (winner?'1':'0');
 	return out;
 }
 
@@ -60,12 +73,13 @@ string[string] flags = {
 
 void backup() {
 	string file = "flogger." + season_int() + "." + my_name().to_lower_case();
-	fite[int] memory, backup;
+	string[int] memory, backup;
 	if (!file_to_map(file + ".txt", memory) || memory.count() == 0) {
 		print("Nothing much to back up.", "red");
 		return;
 	}
-	boolean created = !file_to_map(file + ".bak", backup);
+	file_to_map(file + ".bak", backup);
+	boolean created = (backup.count() == 0);
 	foreach f in memory
 		if (!(backup contains f))
 			backup[f] = memory[f];
@@ -77,7 +91,7 @@ void backup() {
 
 void purge() {
 	string file = "flogger." + season_int() + "." + my_name().to_lower_case() + ".txt";
-	fite[int] memory;
+	string[int] memory;
 	file_to_map(file, memory);
 	foreach f in memory
 		remove memory[f];
@@ -113,7 +127,7 @@ void main(string args) {
 		help();
 		return;
 	}
-	if ($strings[backup,purge] contains args && season_int() == 0)
+	if ($strings[backup,purge] contains args.to_lower_case() && season_int() == 0)
 		print("It's off-season.", "red");
 	call void args();
 }
