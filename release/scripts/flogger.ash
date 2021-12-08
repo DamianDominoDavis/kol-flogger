@@ -15,7 +15,7 @@ foreach s in current_pvp_stances() {
 fite examine_fite(int lid) {
 	fite out;
 	buffer buf = visit_url("peevpee.php?action=log&ff=1&lid="+lid+"&place=logs&pwd", false);
-	if (buf.xpath("//div[@class='fight']/a/text()").count() >= 2) {
+	if (buf.xpath("//div[@class='fight']").count() > 0) {
 		string[int] fighters = buf.xpath("//div[@class='fight']/a/text()");
 		string[int] stances = buf.xpath("//tr[@class='mini']/td/center/b/text()");
 		string[int] results = buf.xpath("//tr[@class='mini']/td[1]");
@@ -57,18 +57,18 @@ int season_int() {
 		string page = visit_url("peevpee.php?place=rules", false).to_string();
 		string season_str = page.xpath("//table//table//p[1]/text()")[0];
 		matcher m = create_matcher("\(\\d+\)", season_str);
-		if (!m.find())
-			return 0;
-		season = m.group(1).to_int();
+		if (m.find())
+			season = m.group(1).to_int();
 	}
 	return season;
 }
 
 string[string] flags = {
 	"backup" 	: "copy cache to a backup",
+	"help"		: "print these messages",
+	"history"	: "toggle calculating only the last 1000 fites / all cached fites",
 	"purge"		: "empty the cache",
-	"recolor"	: "change colorblind modes",
-	"help"		: "print these messages"
+	"recolor"	: "change colorblind modes"
 };
 
 void backup() {
@@ -87,6 +87,25 @@ void backup() {
 		print("Cache copied to " + (created ? "new " : "") + "backup.");
 	else
 		abort("failed to save file" + file + ".bak");
+}
+
+void help() {
+	foreach f in flags
+		print("flogger " + f + " -- " + flags[f]);
+}
+
+void history() {
+	string file = "flogger." + my_name().to_lower_case() + ".pref";
+	string[string] memory;
+	file_to_map(file, memory);
+	if (memory["extended"].to_boolean())
+		memory["extended"] = "false";
+	else
+		memory["extended"] = "true";
+	if (memory.map_to_file(file))
+		print("flogger will use "+(memory["extended"].to_boolean()?"all":"just fresh")+" fite history");
+	else
+		abort("failed to save file" + file);
 }
 
 void purge() {
@@ -116,13 +135,8 @@ void recolor() {
 		abort("failed to save file" + file);
 }
 
-void help() {
-	foreach f in flags
-		print("flogger " + f + " -- " + flags[f]);
-}
-
 void main(string args) {
-	if (args.split_string(' ').count() != 1 || !(flags contains args.to_lower_case())) {
+	if (!(flags contains args.to_lower_case())) {
 		print('flogger what?', 'red');
 		help();
 		return;

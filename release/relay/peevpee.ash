@@ -46,26 +46,41 @@ void main() {
 	string[int] memory;
 	file_to_map(file, memory);
 	int[string,boolean,boolean] scores;
-	int got, scored;
+	boolean[int] got;
+	fite f;
+	foreach idx,grp,lid in log if (grp==1) {
+		int L = lid.to_int();
+		if (!(memory contains L))
+			got[L] = true;
+	}
+	if (got.count() > 0)
+		print('flogger caching '+got.count()+' new recent fites...');
+	got = {};
 	try {
-		foreach idx,grp,lid in log {
-			if (grp==1) {
-				int L = lid.to_int();
-				fite f;
-				if (!(memory contains L)) {
-					f = examine_fite(L);
-					memory[L] = f.to_string();
-					got++;
-				}
-				else
-					f = memory[L].from_string();
+		foreach idx,grp,lid in log if (grp==1) {
+			int L = lid.to_int();
+			if (!(memory contains L)) {
+				f = examine_fite(L);
+				memory[L] = f.to_string();
+				got[L] = true;
+			}
+			else
+				f = memory[L].from_string();
+			foreach mini,winner in f.rounds
+				scores[mini, f.attacking, winner]++;
+			if (got.count() > 0 && got.count() % 50 == 0)
+				map_to_file(memory, file);
+		}
+		
+		string[string] prefs;
+		file_to_map("flogger." + my_name().to_lower_case() + ".pref", prefs);
+		boolean extended = prefs["extended"].to_boolean();
+		if (extended) {
+			foreach L,s in memory if (!(got contains L)) {
+				got[L] = true;
+				f = memory[L].from_string();
 				foreach mini,winner in f.rounds
 					scores[mini, f.attacking, winner]++;
-				scored++;
-				if (got > 0 && got % 50 == 0) {
-					print("Flogger cached "+got+" more fites");
-					map_to_file(memory, file);
-				}
 			}
 		}
 	}
@@ -75,6 +90,8 @@ void main() {
 	// see what you have wrought
 	finally {
 		map_to_file(memory, file);
+		if (got.count() > 0)
+			print('flogger done');
 		page = page.append_child("<head>(.+)</head>",
 			"<style>"+
 			"table table table tr td { vertical-align: middle; padding: 0.5px 2px; } "+
@@ -121,7 +138,7 @@ void main() {
 			}
 			s.write();
 		}
-		string footnote = "</small></p><p><small>** Attacking and defending win rates are over " + scored + " recent fights.</small></p>";
+		string footnote = "</small></p><p><small>** Attacking and defending win rates are over your " + (extended? memory.count()+"": log.count()+" most recent") + "  fights.</small></p>";
 		outro.append_child("<p>(.+)</p>", footnote).write();
 	}
 }
