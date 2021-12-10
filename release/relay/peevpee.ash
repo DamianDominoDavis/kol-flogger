@@ -17,9 +17,17 @@ string colorize(int x) {
 	return `rgb({100-x}%, {x}%, {50-(x>50?x-50:50-x)}%)`;
 }
 
+string join(string sep, item[int] arr) {
+	if (arr.count() < 1)
+		return '';
+	string o;
+	foreach _,it in arr
+		if (it.to_string().length() > 0)
+			o += sep + it.to_string();
+	return o.substring(sep.length());
+}
+
 // knockoff jquery
-// capture tag inner content
-// append elements
 string append_child(string original, string tag_patten, string content) {
 	matcher tag_matcher = tag_patten.create_matcher(original);
 	if (tag_matcher.find())
@@ -33,8 +41,8 @@ void main() {
 	// only when it's seasonal
 	// and we've been fighting
 	string page = visit_url().to_string();
-	string[int,int] log = visit_url("peevpee.php?place=logs&mevs=0&oldseason=0&showmore=1", false).group_string("action=log&ff=1&lid=\(\\d\+\)&place=logs");
-	if (form_field("place") != "rules" || season_int() == 0 || log.count() == 0) {
+	string[int] log = visit_url("peevpee.php?place=logs&mevs=0&oldseason=0&showmore=1", false).xpath('//table//table//table//table//tr');
+	if (form_field("place") != "rules" || season_int() == 0 || log.count() < 2) {
 		page.write();
 		return;
 	}
@@ -42,25 +50,33 @@ void main() {
 	// load from memory
 	// tally up wins and losses
 	// save to file sometimes
+	int gonna,fame,substats,swagger,flowers;
+	item[int] prizes, expenses;
+	boolean[int] got;
+	int[string,boolean,boolean] scores;
 	string file = "flogger." + season_int() + "." + my_name().to_lower_case() + ".txt";
 	string[int] memory;
 	file_to_map(file, memory);
-	int[string,boolean,boolean] scores;
-	boolean[int] got;
 	fite f;
-	foreach idx,grp,lid in log if (grp==1) {
-		int L = lid.to_int();
+	foreach i,s in log if (i!=0) {
+		int L = s.group_string('lid=(\\d+)')[0,1].to_int();
 		if (!(memory contains L))
 			got[L] = true;
 	}
-	if (got.count() > 0)
-		print('flogger caching '+got.count()+' new recent fites...');
+	gonna = got.count();
+	if (gonna > 0) {
+		print('flogger caching '+gonna+' new recent fites...');
+	}
 	got = {};
 	try {
-		foreach idx,grp,lid in log if (grp==1) {
-			int L = lid.to_int();
+		foreach i,s in log if (i!=0) {
+			int L = s.group_string('lid=(\\d+)')[0,1].to_int();
 			if (!(memory contains L)) {
 				f = examine_fite(L);
+				fame += f.fame = s.group_string("([+-](\\d+).Fame)")[0,2].to_int();
+				substats += f.substats = s.group_string("([+-](\\d+).Stats)")[0,2].to_int();
+				swagger += f.swagger = s.group_string("(\\\+(\\d+).Swagger)")[0,2].to_int();
+				flowers += f.flowers = s.group_string("(\\+(\\d).Flower)")[0,2].to_int();
 				memory[L] = f.to_string();
 				got[L] = true;
 			}
@@ -90,11 +106,11 @@ void main() {
 	// see what you have wrought
 	finally {
 		map_to_file(memory, file);
-		if (got.count() > 0)
+		if (gonna > 0)
 			print('flogger done');
 		page = page.append_child("<head>(.+)</head>",
 			"<style>"+
-			"table table table tr td { vertical-align: middle; padding: 0.5px 2px; } "+
+			"table table table tr td { white-space: normal; vertical-align: middle; padding: 0.5px 2px; } "+
 			"table table table td span { display:block; width:8em; border: 1px solid black; padding: 2px 0; font-weight: bold; color: white; text-shadow: 0px 0px 5px black;}"+
 			"</style>"
 		);
@@ -138,7 +154,15 @@ void main() {
 			}
 			s.write();
 		}
-		string footnote = "</small></p><p><small>** Attacking and defending win rates are over your " + (extended? memory.count()+"": log.count()+" most recent") + "  fights.</small></p>";
+		sort prizes by -value.historical_price();
+		sort expenses by -value.historical_price();
+		int who,cares;
+		foreach i,it in prizes
+				who += i * it.historical_price();
+		foreach i,it in expenses
+				cares += i * it.historical_price();
+		string footnote = "</small></p><p><small>** Attacking and defending win rates are over your " + (extended? memory.count()+"": (log.count()-1)+" most recent") + " fights.</small></p>"+
+			`<p><small>Flogger saw you gain {fame} fame, {substats} substats, {swagger} swagger, and {flowers} flowers.</small></p>`;
 		outro.append_child("<p>(.+)</p>", footnote).write();
 	}
 }

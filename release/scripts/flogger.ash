@@ -1,7 +1,19 @@
 record fite {
 	boolean attacking;
 	boolean[string] rounds;
+	int fame;
+	int substats;
+	int swagger;
+	int flowers;
+	item prize;
 };
+
+boolean won(fite f) {
+	int w;
+	foreach mini,result in f.rounds
+		w += (result? 1 : -1);
+	return (w > 0);
+}
 
 // minified stance "enum"
 string[string] stance_to_char;
@@ -41,14 +53,20 @@ fite from_string(string s) {
 	string[int,int] groups = s.group_string('([0-9A-F]{2})');
 	foreach i in groups
 		out.rounds[char_to_stance[groups[i,0].char_at(0)]] = (groups[i,0].char_at(1) == '1');
+	string[int] rest = s.split_string(' ');
+	out.fame = rest[1].to_int();
+	out.substats = rest[2].to_int();
+	out.swagger = rest[3].to_int();
+	out.flowers = rest[4].to_int(); 
+//	out.prize = rest[5].to_item();
 	return out;
 }
 
 string to_string(fite f) {
 	string out = (f.attacking? 'a':'d');
 	foreach mini,winner in f.rounds
-		out += stance_to_char[mini] + (winner?'1':'0');
-	return out;
+		out += stance_to_char[mini] + (winner? '1' : '0');
+	return out + ` {f.fame} {f.substats} {f.swagger} {f.flowers}`; // {f.prize}
 }
 
 int season_int() {
