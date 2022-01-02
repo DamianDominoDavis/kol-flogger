@@ -73,15 +73,19 @@ void main() {
 			int L = s.group_string('lid=(\\d+)')[0,1].to_int();
 			if (!(memory contains L)) {
 				f = examine_fite(L);
-				fame += f.fame = s.group_string("([+-](\\d+).Fame)")[0,2].to_int();
-				substats += f.substats = s.group_string("([+-](\\d+).Stats)")[0,2].to_int();
-				swagger += f.swagger = s.group_string("(\\\+(\\d+).Swagger)")[0,2].to_int();
-				flowers += f.flowers = s.group_string("(\\+(\\d).Flower)")[0,2].to_int();
+				f.fame = s.group_string("([+-](\\d+).Fame)")[0,2].to_int();
+				f.substats = s.group_string("([+-](\\d+).Stats)")[0,2].to_int();
+				f.swagger = s.group_string("(\\\+(\\d+).Swagger)")[0,2].to_int();
+				f.flowers = s.group_string("(\\+(\\d).Flower)")[0,2].to_int();
 				memory[L] = f.to_string();
 				got[L] = true;
 			}
 			else
 				f = memory[L].from_string();
+			fame += f.fame;
+			substats += f.substats;
+			swagger += f.swagger;
+			flowers += f.flowers;
 			foreach mini,winner in f.rounds
 				scores[mini, f.attacking, winner]++;
 			if (got.count() > 0 && got.count() % 50 == 0)
@@ -143,11 +147,11 @@ void main() {
 				}
 				s = s.append_child('<tr class="small">(.+)</tr>',
 					`<td align="center" style="white-space: nowrap;">`+
-						`{b}:{c} <strong>({to_string(100*(b+c).to_float()/attacks, "%.1f")}%)</strong>`+
+						`{b}:{c} <strong>({attacks>0 ? to_string(100*(b+c).to_float()/attacks, "%.1f") : '0'}%)</strong>`+
 						`<span style="background-color:{colorize(a)};"}>{a}%</span>`+
 					`</td>`+
 					`<td align="center" style="white-space: nowrap;">`+
-						`{y}:{z} <strong>({to_string(100*(y+z).to_float()/defends, "%.1f")}%)</strong>`+
+						`{y}:{z} <strong>({defends>0 ? to_string(100*(y+z).to_float()/defends, "%.1f") : '0'}%)</strong>`+
 						`<span style="background-color:{colorize(x)};"}>{x}%</span>`+
 					`</td>`
 				);
