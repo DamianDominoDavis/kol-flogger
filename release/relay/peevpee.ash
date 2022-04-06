@@ -166,7 +166,7 @@ void main() {
 		foreach i,it in expenses
 				cares += i * it.historical_price();
 		string footnote = "</small></p><p><small>** Attacking and defending win rates are over your " + (extended? memory.count()+"": (log.count()-1)+" most recent") + " fights.</small></p>"+
-			`<p><small>Flogger saw you gain {fame} fame, {substats} substats, {swagger} swagger, and {flowers} flowers.</small></p>`;
+			`<p><small>Net: {fame.to_string('%+d')} fame, +{swagger} swagger, ≠{flowers} flowers, and -{substats} substats.</small></p>`;
 		outro.append_child("<p>(.+)</p>", footnote).write();
 	}
 }
