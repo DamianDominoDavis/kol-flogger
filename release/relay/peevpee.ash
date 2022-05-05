@@ -50,7 +50,7 @@ void main() {
 	// load from memory
 	// tally up wins and losses
 	// save to file sometimes
-	int gonna,fame,substats,swagger,flowers;
+	int gonna,fame,substats,swagger,flowers,winningness;
 	item[int] prizes, expenses;
 	boolean[int] got;
 	int[string,boolean,boolean] scores;
@@ -80,9 +80,16 @@ void main() {
 				memory[L] = f.to_string();
 				got[L] = true;
 			}
-			else
-				f = memory[L].from_string();
-			fame += f.fame;
+		}
+		string[string] prefs;
+		file_to_map("flogger." + my_name().to_lower_case() + ".pref", prefs);
+		boolean extended = prefs["extended"].to_boolean();
+		foreach L,s in memory if (extended || got[L]) {
+			f = memory[L].from_string();
+			if (f.fame != 0) {
+				fame += f.fame;
+				winningness += f.won()? 1 : -1;
+			}
 			substats += f.substats;
 			swagger += f.swagger;
 			flowers += f.flowers;
@@ -92,9 +99,7 @@ void main() {
 				map_to_file(memory, file);
 		}
 		
-		string[string] prefs;
-		file_to_map("flogger." + my_name().to_lower_case() + ".pref", prefs);
-		boolean extended = prefs["extended"].to_boolean();
+		
 		if (extended) {
 			foreach L,s in memory if (!(got contains L)) {
 				got[L] = true;
@@ -165,8 +170,8 @@ void main() {
 				who += i * it.historical_price();
 		foreach i,it in expenses
 				cares += i * it.historical_price();
-		string footnote = "</small></p><p><small>** Attacking and defending win rates are over your " + (extended? memory.count()+"": (log.count()-1)+" most recent") + " fights.</small></p>"+
-			`<p><small>Net: {fame.to_string('%+d')} fame, +{swagger} swagger, ≠{flowers} flowers, and -{substats} substats.</small></p>`;
+		string footnote = "</small></p><p><small>** Attacking and defending win rates are over your " + (extended? memory.count()+" recent and cached": (got.count())+" most recent") + " fights.</small></p>"+
+			`<p><small>Net: {fame.to_string('%+d')} fame, {swagger} swagger, {flowers} flowers, {winningness.to_string('%+d')} winningness, and -{substats} substats.</small></p>`;
 		outro.append_child("<p>(.+)</p>", footnote).write();
 	}
 }

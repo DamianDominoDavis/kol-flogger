@@ -16,9 +16,6 @@ Try it out! `svn checkout https://github.com/DamianDominoDavis/kol-flogger/trunk
 <a href="https://raw.githubusercontent.com/DamianDominoDavis/kol-flogger/6c9f85f9e2786a58a84622f75e4776689a243025/example.png"><img alt="Example" src="https://raw.githubusercontent.com/DamianDominoDavis/kol-flogger/6c9f85f9e2786a58a84622f75e4776689a243025/example.png" width="697" height="673"/></a>
 
 ##### Roadmap:
-1. fix history mode, currently broken?
-	* separate caching and scoring phases, that should do it
-2. add winningness, loot gained, loot lost to tracking
-	* reminder: winningness is random attacks minus random losses; fights without fame changes aren't random
-3. add a filter box to the archive page
-	* filter on name or on playerID, use js/css to toggle elements
+1. we are incorrectly tracking fame lost
+2. track loot gained, loot lost 
+3. add a player name/ID filter box to the archive page
