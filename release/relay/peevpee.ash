@@ -138,21 +138,21 @@ void main() {
 				if (scores[mini,true,true] + scores[mini,true,false] > 0) {
 					b = scores[mini,true,true];
 					c = scores[mini,true,false];
-					a = (100 * b) / (b + c);
+					a = (100.0 * b) / (b + c);
 				}
 				if (scores[mini,false,true] + scores[mini,false,false] > 0) {
 					y = scores[mini,false,true];
 					z = scores[mini,false,false];
-					x = (100 * y) / (y + z);
+					x = (100.0 * y) / (y + z);
 				}
 				s = s.append_child('<tr class="small">(.+)</tr>',
 					`<td align="center" style="white-space: nowrap;">`+
-						`{b}:{c} <strong>({attacks>0 ? to_string(100*(b+c).to_float()/attacks, "%.1f") : '0'}%)</strong>`+
-						`<span style="background-color:{colorize(a)};"}>{a}%</span>`+
+						`{b}:{c} <strong>({attacks>0 ? ((100.0 * (b + c)) / attacks).to_string("%.1f") : '0'}%)</strong>`+
+						`<span style="background-color:{colorize(a)};"}>{a.to_string("%.1f")}%</span>`+
 					`</td>`+
 					`<td align="center" style="white-space: nowrap;">`+
-						`{y}:{z} <strong>({defends>0 ? to_string(100*(y+z).to_float()/defends, "%.1f") : '0'}%)</strong>`+
-						`<span style="background-color:{colorize(x)};"}>{x}%</span>`+
+						`{y}:{z} <strong>({defends>0 ? ((100.0 * (y + z)) / defends).to_string("%.1f") : '0'}%)</strong>`+
+						`<span style="background-color:{colorize(x)};"}>{x.to_string("%.1f")}%</span>`+
 					`</td>`
 				);
 			}
