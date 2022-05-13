@@ -120,6 +120,7 @@ void main() {
 		page = page.append_child("<head>(.+)</head>",
 			"<style>"+
 			"table table table tr td { white-space: normal; vertical-align: middle; padding: 0.5px 2px; } "+
+			"table table table tr td:nth-child(n-3) { vertical-align: bottom; } "+
 			"table table table td span { display:block; width:8em; border: 1px solid black; padding: 2px 0; font-weight: bold; color: white; text-shadow: 0px 0px 5px black;}"+
 			"</style>"
 		);
