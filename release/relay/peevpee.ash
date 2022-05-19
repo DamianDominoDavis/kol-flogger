@@ -50,14 +50,11 @@ void main() {
 	// load from memory
 	// tally up wins and losses
 	// save to file sometimes
-	int gonna,fame,substats,swagger,flowers,winningness;
-	item[int] prizes, expenses;
-	boolean[int] got;
-	int[string,boolean,boolean] scores;
+	int gonna;
 	string file = "flogger." + season_int() + "." + my_name().to_lower_case() + ".txt";
 	string[int] memory;
+	boolean[int] got;
 	file_to_map(file, memory);
-	fite f;
 	foreach i,s in log if (i!=0) {
 		int L = s.group_string('lid=(\\d+)')[0,1].to_int();
 		if (!(memory contains L))
@@ -68,7 +65,10 @@ void main() {
 		print('flogger caching '+gonna+' new recent fites...');
 	}
 	got = {};
+
+	int[string,boolean,boolean] scores;
 	try {
+		fite f;
 		foreach i,s in log if (i!=0) {
 			int L = s.group_string('lid=(\\d+)')[0,1].to_int();
 			if (!(memory contains L)) {
@@ -81,10 +81,20 @@ void main() {
 				got[L] = true;
 			}
 		}
+
 		string[string] prefs;
 		file_to_map("flogger." + my_name().to_lower_case() + ".pref", prefs);
 		boolean extended = prefs["extended"].to_boolean();
-		foreach L,s in memory if (extended || got[L]) {
+		int[int] to_score;
+		if (extended)
+			foreach K in memory
+				to_score[to_score.count()] = K;
+		else
+			foreach i,s in log if (i!=0)
+				to_score[to_score.count()] = s.group_string('lid=(\\d+)')[0,1].to_int();
+		
+		int fame,substats,swagger,flowers,winningness;
+		foreach i,L in to_score {
 			f = memory[L].from_string();
 			if (f.fame != 0) {
 				fame += f.fame;
@@ -97,16 +107,6 @@ void main() {
 				scores[mini, f.attacking, winner]++;
 			if (got.count() > 0 && got.count() % 50 == 0)
 				map_to_file(memory, file);
-		}
-		
-		
-		if (extended) {
-			foreach L,s in memory if (!(got contains L)) {
-				got[L] = true;
-				f = memory[L].from_string();
-				foreach mini,winner in f.rounds
-					scores[mini, f.attacking, winner]++;
-			}
 		}
 	}
 
@@ -153,26 +153,20 @@ void main() {
 				}
 				s = s.append_child('<tr class="small">(.+)</tr>',
 					`<td align="center" style="white-space: nowrap;">`+
-						`{b}:{c} <strong>({attacks>0 ? ((100.0 * (b + c)) / attacks).to_string("%.1f") : '0'}%)</strong>`+
+						`<strong>{attacks>0 ? (((b + c) * 700.0 / attacks - 700.0 / 12)).to_string("%+.0f") : '0'}</strong> favor ({b}:{c})`+
 						`<span style="background-color:{colorize(a)};"}>{a.to_string("%.1f")}%</span>`+
 					`</td>`+
 					`<td align="center" style="white-space: nowrap;">`+
-						`{y}:{z} <strong>({defends>0 ? ((100.0 * (y + z)) / defends).to_string("%.1f") : '0'}%)</strong>`+
+						`<strong>{defends>0 ? (((y + z) * 700.0 / defends - 700.0 / 12)).to_string("%+.0f") : '0'}</strong> favor ({y}:{z})`+
 						`<span style="background-color:{colorize(x)};"}>{x.to_string("%.1f")}%</span>`+
 					`</td>`
 				);
 			}
 			s.write();
 		}
-		sort prizes by -value.historical_price();
-		sort expenses by -value.historical_price();
-		int who,cares;
-		foreach i,it in prizes
-				who += i * it.historical_price();
-		foreach i,it in expenses
-				cares += i * it.historical_price();
-		string footnote = "</small></p><p><small>** Attacking and defending win rates are over your " + (extended? memory.count()+" recent and cached": (got.count())+" most recent") + " fights.</small></p>"+
-			`<p><small>Net: {fame.to_string('%+d')} fame, {swagger} swagger, {flowers} flowers, {winningness.to_string('%+d')} winningness, and -{substats} substats.</small></p>`;
+		string footnote = "</small></p><p><small>** Favor is a relative measure of stance frequency. More favor means more frequently chosen for attack. </small></p>"
+						+ "<p><small>*** Attacking and defending win rates are over " +  (extended? "all "+memory.count()+" cached": "the "+(log.count()-1)+" most recent") + " fights. Change this behavior with CLI command <code>flogger history</code>.</small></p>"
+						+ `<p><small>Net: {fame.to_string('%+d')} fame, {swagger} swagger, {flowers} flowers, {winningness.to_string('%+d')} winningness, and -{substats} substats.</small></p>`;
 		outro.append_child("<p>(.+)</p>", footnote).write();
 	}
 }
