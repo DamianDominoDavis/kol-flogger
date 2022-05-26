@@ -2,9 +2,9 @@
 
 *You might not be a winner at everything, you might not be a loser at everything; but you won't find out what you're good at if they tell you you're good at everything.*
 
-**Flogger** for <a href="https://github.com/kolmafia/kolmafia">KoLmafia</a> adds win rate  and stance frequency statistics when you visit the Information Booth in the relay browser. Cached fights load instantly from your local /data, and then Flogger cache up to 200~500 new fights per minute. (You cancel early from KoLmafia with Escape, if you need to, and your cache progress will still be saved.)
+**Flogger** for <a href="https://github.com/kolmafia/kolmafia">KoLmafia</a> caches your pvp fites and adds win rate and stance frequency statistics to the Huggler Memorial Colosseum Information Booth. (If you're caching a LOT of fites and need to pause, you cancel the script from KoLmafia with Escape -- your caching progress will always be saved.)
 
-Try it out! `svn checkout https://github.com/DamianDominoDavis/kol-flogger/trunk/release/`
+Try it out: `svn checkout https://github.com/DamianDominoDavis/kol-flogger/trunk/release/`
 
 ##### CLI Settings:
 - `flogger backup` -- copy cache to a backup
@@ -13,9 +13,9 @@ Try it out! `svn checkout https://github.com/DamianDominoDavis/kol-flogger/trunk
 - `flogger purge` -- empty the cache
 - `flogger recolor` -- change colorblind modes
 
-<a href="https://raw.githubusercontent.com/DamianDominoDavis/kol-flogger/6c9f85f9e2786a58a84622f75e4776689a243025/example.png"><img alt="Example" src="https://raw.githubusercontent.com/DamianDominoDavis/kol-flogger/6c9f85f9e2786a58a84622f75e4776689a243025/example.png" width="697" height="673"/></a>
+<a href="https://raw.githubusercontent.com/DamianDominoDavis/kol-flogger/main/example.png?raw=true"><img alt="Example" src="https://raw.githubusercontent.com/DamianDominoDavis/kol-flogger/main/example.png?raw=true" width="650" height="646"/></a>
 
 ##### Roadmap:
-1. we are incorrectly tracking fame lost
+1. correctly track fame lost
 2. track loot gained, loot lost 
-3. add a player name/ID filter box to the archive page
+3. add name/ID filter box to archive page
