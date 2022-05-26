@@ -50,21 +50,18 @@ void main() {
 	// load from memory
 	// tally up wins and losses
 	// save to file sometimes
-	int gonna;
+	int gonna, got;
 	string file = "flogger." + season_int() + "." + my_name().to_lower_case() + ".txt";
 	string[int] memory;
-	boolean[int] got;
 	file_to_map(file, memory);
 	foreach i,s in log if (i!=0) {
 		int L = s.group_string('lid=(\\d+)')[0,1].to_int();
 		if (!(memory contains L))
-			got[L] = true;
+			gonna++;
 	}
-	gonna = got.count();
 	if (gonna > 0) {
 		print('flogger caching '+gonna+' new recent fites...');
 	}
-	got = {};
 
 	int[string,boolean,boolean] scores;
 	try {
@@ -78,7 +75,6 @@ void main() {
 				f.swagger = s.group_string("(\\\+(\\d+).Swagger)")[0,2].to_int();
 				f.flowers = s.group_string("(\\+(\\d).Flower)")[0,2].to_int();
 				memory[L] = f.to_string();
-				got[L] = true;
 			}
 		}
 
@@ -86,15 +82,11 @@ void main() {
 		file_to_map("flogger." + my_name().to_lower_case() + ".pref", prefs);
 		boolean extended = prefs["extended"].to_boolean();
 		int[int] to_score;
-		if (extended)
-			foreach K in memory
-				to_score[to_score.count()] = K;
-		else
-			foreach i,s in log if (i!=0)
-				to_score[to_score.count()] = s.group_string('lid=(\\d+)')[0,1].to_int();
-		
+		foreach i,s in log if (i!=0)
+			to_score[to_score.count()] = s.group_string('lid=(\\d+)')[0,1].to_int();
+	
 		int fame,substats,swagger,flowers,winningness;
-		foreach i,L in to_score {
+		foreach L in memory if (extended || to_score contains L) {
 			f = memory[L].from_string();
 			if (f.fame != 0) {
 				fame += f.fame;
@@ -105,7 +97,7 @@ void main() {
 			flowers += f.flowers;
 			foreach mini,winner in f.rounds
 				scores[mini, f.attacking, winner]++;
-			if (got.count() > 0 && got.count() % 50 == 0)
+			if (gonna > 0 && ++got % 50 == 0)
 				map_to_file(memory, file);
 		}
 	}
@@ -153,11 +145,12 @@ void main() {
 				}
 				s = s.append_child('<tr class="small">(.+)</tr>',
 					`<td align="center" style="white-space: nowrap;">`+
-						`<strong>{attacks>0 ? (((b + c) * 700.0 / attacks - 700.0 / 12)).to_string("%+.0f") : '0'}</strong> favor ({b}:{c})`+
+						# (((b + c) * 700.0 / attacks - 700.0 / 12))
+						`<strong>{attacks>0 ? ((1000 / 6.0) * (to_float(b + c) / attacks - 1.0 / 12)).to_string("%+.0f") : '0'}</strong> favor ({b}:{c})`+
 						`<span style="background-color:{colorize(a)};"}>{a.to_string("%.1f")}%</span>`+
 					`</td>`+
 					`<td align="center" style="white-space: nowrap;">`+
-						`<strong>{defends>0 ? (((y + z) * 700.0 / defends - 700.0 / 12)).to_string("%+.0f") : '0'}</strong> favor ({y}:{z})`+
+						`<strong>{defends>0 ? ((1000 / 6.0) * (to_float(y + z) / defends - 1.0 / 12)).to_string("%+.0f") : '0'}</strong> favor ({y}:{z})`+
 						`<span style="background-color:{colorize(x)};"}>{x.to_string("%.1f")}%</span>`+
 					`</td>`
 				);
