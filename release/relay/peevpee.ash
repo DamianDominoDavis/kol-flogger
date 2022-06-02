@@ -66,8 +66,10 @@ void main() {
 	int[string,boolean,boolean] scores;
 	try {
 		fite f;
+		int[int] to_score;
 		foreach i,s in log if (i!=0) {
 			int L = s.group_string('lid=(\\d+)')[0,1].to_int();
+			to_score[to_score.count()] = L;
 			if (!(memory contains L)) {
 				f = examine_fite(L);
 				f.fame = s.group_string("([+-](\\d+).Fame)")[0,2].to_int();
@@ -78,28 +80,41 @@ void main() {
 			}
 		}
 
+		int fame,substats,swagger,flowers,winningness;
 		string[string] prefs;
 		file_to_map("flogger." + my_name().to_lower_case() + ".pref", prefs);
 		boolean extended = prefs["extended"].to_boolean();
-		int[int] to_score;
-		foreach i,s in log if (i!=0)
-			to_score[to_score.count()] = s.group_string('lid=(\\d+)')[0,1].to_int();
-	
-		int fame,substats,swagger,flowers,winningness;
-		foreach L in memory if (extended || to_score contains L) {
-			f = memory[L].from_string();
-			if (f.fame != 0) {
-				fame += f.fame;
-				winningness += f.won()? 1 : -1;
+		if (extended)
+			foreach L in memory {
+				f = memory[L].from_string();
+				if (f.fame != 0) {
+					fame += f.fame;
+					winningness += f.won()? 1 : -1;
+				}
+				substats += f.substats;
+				swagger += f.swagger;
+				flowers += f.flowers;
+				foreach mini,winner in f.rounds
+					scores[mini, f.attacking, winner]++;
+				if (gonna > 0 && ++got % 50 == 0)
+					map_to_file(memory, file);
 			}
-			substats += f.substats;
-			swagger += f.swagger;
-			flowers += f.flowers;
-			foreach mini,winner in f.rounds
-				scores[mini, f.attacking, winner]++;
-			if (gonna > 0 && ++got % 50 == 0)
-				map_to_file(memory, file);
-		}
+		else
+			foreach i,s in log if (i!=0) {
+				int L = s.group_string('lid=(\\d+)')[0,1].to_int();
+				f = memory[L].from_string();
+				if (f.fame != 0) {
+					fame += f.fame;
+					winningness += f.won()? 1 : -1;
+				}
+				substats += f.substats;
+				swagger += f.swagger;
+				flowers += f.flowers;
+				foreach mini,winner in f.rounds
+					scores[mini, f.attacking, winner]++;
+				if (gonna > 0 && ++got % 50 == 0)
+					map_to_file(memory, file);
+			}
 	}
 
 	// save it all to file
