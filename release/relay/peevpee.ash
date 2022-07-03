@@ -145,7 +145,11 @@ void main() {
 		foreach i,s in mid {
 			if (i == 0)
 				s = s.append_child("<tr>(.+)</tr>", "<th>Attacking</th><th>Defending</th>");
-			else foreach mini in current_pvp_stances() if (s.contains_text(mini) || s.contains_text(mini.replace_string("'",'&apos;')) || s.replace_string('rrr','r').contains_text(mini.replace_string('rrr','r'))) {
+			else foreach mini in current_pvp_stances()
+			if (	s.contains_text(mini)
+				|| s.contains_text(mini.replace_string("'",'&apos;'))
+				|| s.contains_text(mini.replace_string("&",'&amp;'))
+				|| s.replace_string('rrr','r').contains_text(mini.replace_string('rrr','r')) ) {
 				float a,x;
 				int b,c,y,z;
 				if (scores[mini,true,true] + scores[mini,true,false] > 0) {
