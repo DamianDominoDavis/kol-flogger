@@ -16,12 +16,13 @@ boolean won(fite f) {
 }
 
 // minified stance "enum"
-string[string] stance_to_char;
-string[string] char_to_stance;
-foreach s in current_pvp_stances() {
-	stance_to_char[s] = to_string(stance_to_char.count(), "%X");
-	char_to_stance[stance_to_char[s]] = s;
-}
+static string[string] stance_to_char;
+static string[string] char_to_stance;
+if (stance_to_char.count() < 1)
+	foreach s in current_pvp_stances() {
+		stance_to_char[s] = to_string(stance_to_char.count(), "%X");
+		char_to_stance[stance_to_char[s]] = s;
+	}
 
 // fite constructor, takes uids from pvp log page links
 fite examine_fite(int lid) {
