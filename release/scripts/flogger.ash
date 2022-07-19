@@ -16,13 +16,17 @@ boolean won(fite f) {
 }
 
 // minified stance "enum"
-static string[string] stance_to_char;
-static string[string] char_to_stance;
-if (stance_to_char.count() < 1)
-	foreach s in current_pvp_stances() {
-		stance_to_char[s] = to_string(stance_to_char.count(), "%X");
-		char_to_stance[stance_to_char[s]] = s;
+static int[string] stance_to_int;
+static string[int] int_to_stance;
+int[string] from_hex = {'0':0,'1':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'A':10,'B':11};
+if (stance_to_int.count() < 1) {
+	buffer info = visit_url('peevpee.php?place=rules', false);
+	foreach k,s in info.xpath('//table//table//table//tr//td[1]//text()') {
+		string unstarred = (s.char_at(s.length()-1) =='*') ? s.substring(0, s.length()-1) : s;
+		stance_to_int[unstarred] = k;
+		int_to_stance[k] = unstarred;
 	}
+}
 
 // fite constructor, takes uids from pvp log page links
 fite examine_fite(int lid) {
@@ -51,10 +55,11 @@ fite examine_fite(int lid) {
 fite from_string(string s) {
 	fite out;
 	out.attacking = (s.char_at(0) == 'a');
-	string[int,int] groups = s.group_string('([0-9A-F]{2})');
+	string tring = s.substring(1);
+	string[int,int] groups = tring.group_string('([0-9AB][01])');
 	foreach i in groups
-		out.rounds[char_to_stance[groups[i,0].char_at(0)]] = (groups[i,0].char_at(1) == '1');
-	string[int] rest = s.split_string(' ');
+		out.rounds[int_to_stance[from_hex[groups[i,0].char_at(0)]]] = (groups[i,0].char_at(1) == '1');
+	string[int] rest = tring.split_string(' ');
 	out.fame = rest[1].to_int();
 	out.substats = rest[2].to_int();
 	out.swagger = rest[3].to_int();
@@ -66,7 +71,7 @@ fite from_string(string s) {
 string to_string(fite f) {
 	string out = (f.attacking? 'a':'d');
 	foreach mini,winner in f.rounds
-		out += stance_to_char[mini] + (winner? '1' : '0');
+		out += stance_to_int[mini].to_string('%X') + (winner? '1' : '0');
 	return out + ` {f.fame} {f.substats} {f.swagger} {f.flowers}`; // {f.prize}
 }
 

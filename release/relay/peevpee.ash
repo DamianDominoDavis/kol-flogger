@@ -5,8 +5,8 @@
 import <flogger.ash>
 
 // Xth value along
-// two linear gradients
-// grey between extremes
+// gradient between two hues
+// in the middle, grey
 string colorize(int x) {
 	string[string] fmem;
 	string file = "flogger." + my_name().to_lower_case() + ".pref";
@@ -18,6 +18,9 @@ string colorize(int x) {
 	return `rgb({100-x}%, {x}%, {50-(x>50?x-50:50-x)}%)`;
 }
 
+// python idiom
+// stringify the list of things
+// with separators
 string join(string sep, item[int] arr) {
 	if (arr.count() < 1)
 		return '';
@@ -148,33 +151,29 @@ void main() {
 			if (i == 0)
 				s = s.append_child("<tr>(.+)</tr>", "<th>Attacking</th><th>Defending</th>");
 			else {
-				foreach mini in stance_to_char {
-					string miniature = mini.replace_string('&','&amp;').replace_string("'",'&apos;').replace_string('rrr','r');
-					if (s.contains_text(mini) || s.contains_text(miniature)) {
-						float a,x;
-						int b,c,y,z;
-						if (scores[mini,true,true] + scores[mini,true,false] > 0) {
-							b = scores[mini,true,true];
-							c = scores[mini,true,false];
-							a = (100.0 * b) / (b + c);
-						}
-						if (scores[mini,false,true] + scores[mini,false,false] > 0) {
-							y = scores[mini,false,true];
-							z = scores[mini,false,false];
-							x = (100.0 * y) / (y + z);
-						}
-						s = s.append_child('<tr class="small">(.+)</tr>',
-							`<td align="center" style="white-space: nowrap;">`+
-								# (((b + c) * 700.0 / attacks - 700.0 / 12))
-								`<strong>{attacks>0 ? ((1000 / 6.0) * (to_float(b + c) / attacks - 1.0 / 12)).to_string("%+.0f") : '0'}</strong> favor ({b}:{c})`+
-								`<span style="background-color:{colorize(a)};"}>{a.to_string("%.1f")}%</span>`+
-							`</td>`+
-							`<td align="center" style="white-space: nowrap;">`+
-								`<strong>{defends>0 ? ((1000 / 6.0) * (to_float(y + z) / defends - 1.0 / 12)).to_string("%+.0f") : '0'}</strong> favor ({y}:{z})`+
-								`<span style="background-color:{colorize(x)};"}>{x.to_string("%.1f")}%</span>`+
-							`</td>`);
-					}
+				string mini = int_to_stance[i-1];
+				float a,x;
+				int b,c,y,z;
+				if (scores[mini,true,true] + scores[mini,true,false] > 0) {
+					b = scores[mini,true,true];
+					c = scores[mini,true,false];
+					a = (100.0 * b) / (b + c);
 				}
+				if (scores[mini,false,true] + scores[mini,false,false] > 0) {
+					y = scores[mini,false,true];
+					z = scores[mini,false,false];
+					x = (100.0 * y) / (y + z);
+				}
+				s = s.append_child('<tr class="small">(.+)</tr>',
+					`<td align="center" style="white-space: nowrap;">`+
+						# (((b + c) * 700.0 / attacks - 700.0 / 12))
+						`<strong>{attacks>0 ? ((1000 / 6.0) * (to_float(b + c) / attacks - 1.0 / 12)).to_string("%+.0f") : '0'}</strong> favor ({b}:{c})`+
+						`<span style="background-color:{colorize(a)};"}>{a.to_string("%.1f")}%</span>`+
+					`</td>`+
+					`<td align="center" style="white-space: nowrap;">`+
+						`<strong>{defends>0 ? ((1000 / 6.0) * (to_float(y + z) / defends - 1.0 / 12)).to_string("%+.0f") : '0'}</strong> favor ({y}:{z})`+
+						`<span style="background-color:{colorize(x)};"}>{x.to_string("%.1f")}%</span>`+
+					`</td>`);
 			}
 			s.write();
 		}
