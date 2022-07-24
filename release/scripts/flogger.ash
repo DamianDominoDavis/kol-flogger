@@ -27,6 +27,8 @@ if (stance_to_int.count() < 1) {
 		int_to_stance[k] = unstarred;
 	}
 }
+if (stance_to_int.count()!=12) abort('What are we fighting about?');
+// else foreach i,s in int_to_stance print(`{i}: {s}`);
 
 // fite constructor, takes uids from pvp log page links
 fite examine_fite(int lid) {
@@ -45,8 +47,8 @@ fite examine_fite(int lid) {
 		string[int] stances = buf.xpath("//table//table//table//table//tr/td[1]//b/text()");
 		string[int] results = buf.xpath("//table//table//table//table//tr/td[2]//b/text()");
 		out.attacking = (my_name().to_lower_case() == fighters[0].to_lower_case());
-		foreach i,winner in results
-			out.rounds[stances[i]] = (!(out.attacking ^ (my_name().to_lower_case() == results[i].to_lower_case())));
+		foreach i,mini in stances
+			out.rounds[mini] = (!(out.attacking ^ (my_name().to_lower_case() == results[i].to_lower_case())));
 		}
 	return out;
 }
@@ -71,7 +73,11 @@ fite from_string(string s) {
 string to_string(fite f) {
 	string out = (f.attacking? 'a':'d');
 	foreach mini,winner in f.rounds
-		out += stance_to_int[mini].to_string('%X') + (winner? '1' : '0');
+		if (!(stance_to_int contains mini))
+		//	abort("won't save unknown stance "+mini);
+			out += stance_to_int[mini].to_string('B') + (winner? '1' : '0');
+		else
+			out += stance_to_int[mini].to_string('%X') + (winner? '1' : '0');
 	return out + ` {f.fame} {f.substats} {f.swagger} {f.flowers}`; // {f.prize}
 }
 
