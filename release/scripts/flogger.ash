@@ -73,11 +73,7 @@ fite from_string(string s) {
 string to_string(fite f) {
 	string out = (f.attacking? 'a':'d');
 	foreach mini,winner in f.rounds
-		if (!(stance_to_int contains mini))
-		//	abort("won't save unknown stance "+mini);
-			out += stance_to_int[mini].to_string('B') + (winner? '1' : '0');
-		else
-			out += stance_to_int[mini].to_string('%X') + (winner? '1' : '0');
+		out += stance_to_int[mini].to_string('%X') + (winner? '1' : '0');
 	return out + ` {f.fame} {f.substats} {f.swagger} {f.flowers}`; // {f.prize}
 }
 
