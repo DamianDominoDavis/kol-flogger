@@ -43,12 +43,13 @@ fite examine_fite(int lid) {
 			out.rounds[mini] = (!(out.attacking ^ results[i].contains_text("youwin")));
 	}
 	else {
+		// compact mode
 		string[int] fighters = buf.xpath("//table//table//table//table//tr//a/text()");	
-		string[int] stances = buf.xpath("//table//table//table//table//tr/td[1]//b/text()");
-		string[int] results = buf.xpath("//table//table//table//table//tr/td[2]//b/text()");
+		string[int] stances = buf.xpath("//table//table//table//table//td[1]/b/text()");
+		string[int] results = buf.xpath("//table//table//table//table//td[2]/b/text()");
 		out.attacking = (my_name().to_lower_case() == fighters[0].to_lower_case());
-		foreach i,mini in stances
-			out.rounds[mini] = (!(out.attacking ^ (my_name().to_lower_case() == results[i].to_lower_case())));
+		foreach i,winner in results
+			out.rounds[stances[i]] = (!(out.attacking ^ (my_name().to_lower_case() == results[i].to_lower_case())));
 		}
 	return out;
 }
