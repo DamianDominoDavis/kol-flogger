@@ -70,6 +70,8 @@ void main() {
 	}
 
 	int[string,boolean,boolean] scores;
+	int scanThisMany = 1000;
+
 	try {
 		fite f;
 		int[int] to_score;
@@ -78,8 +80,8 @@ void main() {
 			to_score[to_score.count()] = L;
 			if (!(memory contains L)) {
 				f = examine_fite(L);
-				f.fame = s.group_string("([+-](\\d+).Fame)")[0,2].to_int();
-				f.substats = s.group_string("([+-](\\d+).Stats)")[0,2].to_int();
+				f.fame = s.group_string("(([+-]\\d+).Fame)")[0,2].to_int();
+				f.substats = s.group_string("(([+-]\\d+).Stats)")[0,2].to_int();
 				f.swagger = s.group_string("(\\\+(\\d+).Swagger)")[0,2].to_int();
 				f.flowers = s.group_string("(\\+(\\d).Flower)")[0,2].to_int();
 				memory[L] = f.to_string();
@@ -89,38 +91,22 @@ void main() {
 		int fame,substats,swagger,flowers,winningness;
 		string[string] prefs;
 		file_to_map("flogger." + my_name().to_lower_case() + ".pref", prefs);
-		boolean extended = prefs["extended"].to_boolean();
-		if (extended)
-			foreach L in memory {
-				f = memory[L].from_string();
-				if (f.fame != 0) {
-					fame += f.fame;
-					winningness += f.won()? 1 : -1;
-				}
-				substats += f.substats;
-				swagger += f.swagger;
-				flowers += f.flowers;
-				foreach mini,winner in f.rounds
-					scores[mini, f.attacking, winner]++;
-				if (gonna > 0 && ++got % 50 == 0)
-					map_to_file(memory, file);
+		scanThisMany = prefs["freshness"].to_int();
+		int scannedSoFar = 0;
+		foreach L in memory if (memory.count() - scannedSoFar++ <= scanThisMany) {
+			f = memory[L].from_string();
+			if (f.fame != 0) {
+				fame += f.fame;
+				winningness += f.won()? 1 : -1;
 			}
-		else
-			foreach i,s in log if (i!=0) {
-				int L = s.group_string('lid=(\\d+)')[0,1].to_int();
-				f = memory[L].from_string();
-				if (f.fame != 0) {
-					fame += f.fame;
-					winningness += f.won()? 1 : -1;
-				}
-				substats += f.substats;
-				swagger += f.swagger;
-				flowers += f.flowers;
-				foreach mini,winner in f.rounds
-					scores[mini, f.attacking, winner]++;
-				if (gonna > 0 && ++got % 50 == 0)
-					map_to_file(memory, file);
-			}
+			substats += f.substats;
+			swagger += f.swagger;
+			flowers += f.flowers;
+			foreach mini,winner in f.rounds
+				scores[mini, f.attacking, winner]++;
+			if (gonna > 0 && ++got % 50 == 0)
+				map_to_file(memory, file);
+		}
 	}
 
 	// save it all to file
@@ -179,9 +165,9 @@ void main() {
 		}
 
 		string outro = "</table><p><small>" + page.split_string("</td></tr></table><p><small>")[1];
-		string footnote = "</small></p><p><small>** Favor is a relative measure of stance frequency. More favor means more frequently chosen for attack. </small></p>"
-						+ "<p><small>*** Attacking and defending win rates are over " +  (extended? "all "+memory.count()+" cached": "the "+(log.count()-1)+" most recent") + " fights. Change this behavior with CLI command <code>flogger history</code>.</small></p>"
-						+ `<p><small>Net: {fame.to_string('%+d')} fame, {swagger} swagger, {flowers} flowers, {winningness.to_string('%+d')} winningness, and -{substats} substats.</small></p>`;
+		string footnote = "</small></p><p><small>** Favor measures how popular the mini-competitions are. Higher favor means chosen more often when attacking. </small></p>"
+						+ "<p><small>*** Stats above are calculated over your last " + scanThisMany + " fights. Change this number with CLI command <code>flogger history</code>.</small></p>"
+						+ `<p><small>Net: {fame.to_string('%+d')} fame, {swagger} swagger, {flowers} flowers, {winningness.to_string('%+d')} winningness, and {substats} substats.</small></p>`;
 		outro.append_child("<p>(.+)</p>", footnote).write();
 	}
 }

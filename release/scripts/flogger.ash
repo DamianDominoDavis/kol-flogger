@@ -122,17 +122,7 @@ void help() {
 }
 
 void history() {
-	string file = "flogger." + my_name().to_lower_case() + ".pref";
-	string[string] memory;
-	file_to_map(file, memory);
-	if (memory["extended"].to_boolean())
-		memory["extended"] = "false";
-	else
-		memory["extended"] = "true";
-	if (memory.map_to_file(file))
-		print("flogger will use "+(memory["extended"].to_boolean()?"all":"just fresh")+" fite history");
-	else
-		abort("failed to save file" + file);
+	cli_execute('takeAnumber');
 }
 
 void purge() {
