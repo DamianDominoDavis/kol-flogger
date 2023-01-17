@@ -122,7 +122,7 @@ void help() {
 }
 
 void history() {
-	cli_execute('takeAnumber');
+	cli_execute('flogger_freshness');
 }
 
 void purge() {
