@@ -92,6 +92,8 @@ void main() {
 		string[string] prefs;
 		file_to_map("flogger." + my_name().to_lower_case() + ".pref", prefs);
 		scanThisMany = prefs["freshness"].to_int();
+		if (scanThisMany < 1)
+			scanThisMany = 1000;
 		int scannedSoFar = 0;
 		foreach L in memory if (memory.count() - scannedSoFar++ <= scanThisMany) {
 			f = memory[L].from_string();
