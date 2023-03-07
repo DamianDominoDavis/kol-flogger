@@ -23,9 +23,9 @@ if (stance_to_int.count() < 1) {
 	buffer info = visit_url('peevpee.php?place=rules', false);
 	foreach k,s in info.xpath('//table//table//table//tr//td[1]//text()') {
 		string unstarred = (s.char_at(s.length()-1) =='*') ? s.substring(0, s.length()-1) : s;
-		string stupid_fucking_pirates = unstarred.replace_string('rrr','r').replace_string('Rrr','R');
-		stance_to_int[stupid_fucking_pirates] = k;
-		int_to_stance[k] = stupid_fucking_pirates;
+		string unarrred = unstarred.replace_string('Rrr','R').replace_string('rrr','r');
+		stance_to_int[unarrred] = k;
+		int_to_stance[k] = unarrred;
 	}
 }
 if (stance_to_int.count()!=12) abort('What are we fighting about?');
@@ -41,8 +41,8 @@ fite examine_fite(int lid) {
 		string[int] results = buf.xpath("//tr[@class='mini']/td[1]");
 		out.attacking = (my_name().to_lower_case() == fighters[0].to_lower_case());
 		foreach i,mini in stances {
-			string stupid_fucking_pirates = mini.replace_string('Rrr','R').replace_string('rrr','r');
-			out.rounds[stupid_fucking_pirates] = (!(out.attacking ^ results[i].contains_text("youwin")));
+			string unarrred = mini.replace_string('Rrr','R').replace_string('rrr','r');
+			out.rounds[unarrred] = (!(out.attacking ^ results[i].contains_text("youwin")));
 		}
 	}
 	else {
