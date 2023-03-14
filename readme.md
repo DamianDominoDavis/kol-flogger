@@ -19,5 +19,6 @@ Try it out: `svn checkout https://github.com/DamianDominoDavis/kol-flogger/trunk
 ##### Roadmap:
 1. Requested: move Flogger to an awesome menu relay link
 2. Requested: add cumulative rates for fites won, minis won
-2. Requested: track loot gained, loot lost 
-3. add name/ID filter box to archive page
+3. Requested: track loot gained, loot lost 
+4. add name/ID filter box to archive page
+5. fix compact mode

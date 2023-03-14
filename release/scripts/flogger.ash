@@ -35,26 +35,50 @@ if (stance_to_int.count()!=12) abort('What are we fighting about?');
 fite examine_fite(int lid) {
 	fite out;
 	buffer buf = visit_url("peevpee.php?action=log&ff=1&lid="+lid+"&place=logs&pwd", false);
-	if (buf.xpath("//div[@class='fight']").count() > 0) {
-		string[int] fighters = buf.xpath("//div[@class='fight']/a/text()");
-		string[int] stances = buf.xpath("//tr[@class='mini']/td/center/b/text()");
-		string[int] results = buf.xpath("//tr[@class='mini']/td[1]");
+	string[int] fighters;
+	string[int] stances;
+	string[int] results;
+	int debug_fite_id = -1;
+
+	if (buf.xpath("//div[@class='fight']").count() > 0) { // expanded mode
+		fighters = buf.xpath("//div[@class='fight']/a/text()");
+		stances = buf.xpath("//tr[@class='mini']/td/center/b/text()");
+		results = buf.xpath("//tr[@class='mini']/td[1]");
+		foreach i in stances
+			stances[i] = stances[i].replace_string('Rrr','R').replace_string('rrr','r');
 		out.attacking = (my_name().to_lower_case() == fighters[0].to_lower_case());
 		foreach i,mini in stances {
-			string unarrred = mini.replace_string('Rrr','R').replace_string('rrr','r');
-			out.rounds[unarrred] = (!(out.attacking ^ results[i].contains_text("youwin")));
+			out.rounds[mini] = (!(out.attacking ^ results[i].contains_text("youwin")));
+		}
+		if (lid == debug_fite_id) {
+			print('attacking:' + out.attacking);
+			print('Fighters:');
+			foreach i,f in fighters print(`{i}: {f}`);
+			print('stances:');
+			foreach i,s in stances print(`{i}: {s}`);
+			print('results:');
+			foreach i,r in results print(`{i}: {r}`);
+			print('out.rounds:');
+			foreach s,b in out.rounds print(`{stance_to_int[s]}: {b}`);
 		}
 	}
-	else {
-		// compact mode
-		string[int] fighters = buf.xpath("//table//table//table//table//tr//a/text()");	
-		string[int] stances = buf.xpath("//table//table//table//table//td[1]/b/text()");
-		string[int] results = buf.xpath("//table//table//table//table//td[2]/b/text()");
-		foreach i in stances stances[i] = stances[i].replace_string('Rrr','R').replace_string('rrr','r');
+	else {	// compact mode, unreachable code
+		fighters = buf.xpath("//table//table//table//table//tr//a/text()");	
+		stances = buf.xpath("//table//table//table//table//td[1]/b/text()");
+		results = buf.xpath("//table//table//table//table//td[2]/text()");
+		foreach i in stances
+			stances[i] = stances[i].replace_string('Rrr','R').replace_string('rrr','r');
 		out.attacking = (my_name().to_lower_case() == fighters[0].to_lower_case());
-		foreach i,winner in results
-			out.rounds[stances[i]] = (!(out.attacking ^ (my_name().to_lower_case() == results[i].to_lower_case())));
+		for i from 0 to 6 {
+			results[i] = ( group_count(create_matcher("("+fighters[0].to_lower_case()+")", results[i])) 
+				> group_count(create_matcher("("+fighters[1].to_lower_case()+")", results[i])) )
+				? fighters[0] : fighters[1];
 		}
+		for i from 0 to 6
+			out.rounds[stances[i]] = (!(out.attacking ^ (my_name().to_lower_case() == results[i].to_lower_case())));
+		// if (lid == debug_fite_id)
+		//	print();
+	}
 	return out;
 }
 

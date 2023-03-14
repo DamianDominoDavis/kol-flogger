@@ -53,6 +53,20 @@ void main() {
 		return;
 	}
 
+	// enough is enough
+	// compact mode can stay broken
+	// til I feel like it
+	int test_lid = log[1].group_string('lid=(\\d+)')[0,1].to_int();
+	buffer test_fight = visit_url("peevpee.php?action=log&ff=1&lid="+test_lid+"&place=logs&pwd", false);
+	if (test_fight.xpath("//div[@class='fight']").count() == 0) {
+		string outro = "</table><p><small>" + page.split_string("</td></tr></table><p><small>")[1];
+		string footnote = `</small></p><h1>Compact Mode for pvp breaks Flogger.</h1><h4>Go turn that off in your <a href="account.php">vanilla kol options</a>.</h4>`;
+		outro.append_child("<p>(.+)</p>", footnote).write();
+		page.write();
+		return;
+	}
+
+
 	// load from memory
 	// tally up wins and losses
 	// save to file sometimes
