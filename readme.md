@@ -1,7 +1,8 @@
 # Flogger
 
 *"What's this shit, standing around *watching* the game? Get in there, put a helmet on, and hurt somebody."*
-— George Carlin, Playin' with Your Head (1986)
+
+– George Carlin, Playin' with Your Head (1986)
 
 **Flogger** for <a href="https://github.com/kolmafia/kolmafia">KoLmafia</a> caches your pvp fites and adds win rate and stance frequency statistics to the Huggler Memorial Colosseum Information Booth. (If you're caching a LOT of fites and need to pause, you cancel the script from KoLmafia with Escape -- your caching progress will always be saved.)
 
@@ -18,7 +19,6 @@ Try it out: `svn checkout https://github.com/DamianDominoDavis/kol-flogger/trunk
 
 ##### Roadmap:
 1. Requested: move Flogger to an awesome menu relay link
-2. Requested: add cumulative rates for fites won, minis won
-3. Requested: track loot gained, loot lost 
-4. add name/ID filter box to archive page
-5. fix compact mode
+2. Requested: track loot gained, loot lost 
+3. add name/ID filter box to archive page
+4. fix compact mode

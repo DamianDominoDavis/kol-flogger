@@ -42,6 +42,10 @@ string append_child(string original, string tag_patten, string content) {
 	return "";
 }
 
+float out_of(float a,float b) {
+	return (100.0 * a) / (a + b);
+}
+
 void main() {
 	// override the rules
 	// only when it's seasonal
@@ -84,6 +88,7 @@ void main() {
 	}
 
 	int[string,boolean,boolean] scores;
+	int[boolean,boolean] cumulative;
 	int scanThisMany = 1000;
 
 	try {
@@ -110,6 +115,7 @@ void main() {
 			scanThisMany = 1000;
 		int scannedSoFar = 0;
 		foreach L in memory if (memory.count() - scannedSoFar++ <= scanThisMany) {
+			cumulative[f.attacking,f.won()]++;
 			f = memory[L].from_string();
 			if (f.fame != 0) {
 				fame += f.fame;
@@ -134,7 +140,8 @@ void main() {
 			print('flogger done');
 		page = page.append_child("<head>(.+)</head>",
 			"<style>"+
-			"table table table tr td { white-space: normal; vertical-align: middle; padding: 0.5px 2px; } "+
+			"table table table tr td { white-space: normal; vertical-align: middle!important; padding: 0.5px 2px; } "+
+			"table table table tr td:nth-child(n-3) { vertical-align: bottom; } "+
 			"table table table tr td:nth-child(n-3) { vertical-align: bottom; } "+
 			"table table table td span { display:block; width:8em; border: 1px solid black; padding: 2px 0; font-weight: bold; color: white; text-shadow: 0px 0px 5px black;}"+
 			"</style>"
@@ -142,39 +149,48 @@ void main() {
 
 		page.split_string("<tr><th>Name</th>")[0].write();
 
-		int attacks, defends;
+		int total_attacks;
+		int total_defends;
 		foreach mini,attacking,win in scores {
 			if (attacking)
-				attacks += scores[mini,attacking,win];
+				total_attacks += scores[mini,attacking,win];
 			else
-				defends += scores[mini,attacking,win];
+				total_defends += scores[mini,attacking,win];
 		}
 		foreach i,s in page.xpath("//table//table//table//tr") {
 			if (i == 0)
 				s = s.append_child("<tr>(.+)</tr>", "<th>Attacking</th><th>Defending</th>");
 			else {
 				string mini = int_to_stance[i-1];
-				float a,x;
-				int b,c,y,z;
+				int atk_wins;
+				int atk_loss;
+				int def_wins;
+				int def_loss;
+				float win_rate;
+				float loss_rate;
 				if (scores[mini,true,true] + scores[mini,true,false] > 0) {
-					b = scores[mini,true,true];
-					c = scores[mini,true,false];
-					a = (100.0 * b) / (b + c);
+					atk_wins = scores[mini,true,true];
+					atk_loss = scores[mini,true,false];
+					win_rate = out_of(atk_wins, atk_loss);
 				}
 				if (scores[mini,false,true] + scores[mini,false,false] > 0) {
-					y = scores[mini,false,true];
-					z = scores[mini,false,false];
-					x = (100.0 * y) / (y + z);
+					def_wins = scores[mini,false,true];
+					def_loss = scores[mini,false,false];
+					loss_rate = out_of(def_wins, def_loss);
 				}
+				float favor_atk = (100 * 10 / 6.0) * (to_float(atk_wins + atk_loss) / total_attacks - 1.0 / 12);
+				float favor_def = (100 * 10 / 6.0) * (to_float(def_wins + def_loss) / total_defends - 1.0 / 12);
+				//float rate_atk = (100) * (to_float(atk_wins + atk_loss) * 7.0 / total_attacks);
+				//float rate_def = (100) * (to_float(def_wins + def_loss) * 7.0 / total_defends);
 				s = s.append_child('<tr class="small">(.+)</tr>',
 					`<td align="center" style="white-space: nowrap;">`+
-						# (((b + c) * 700.0 / attacks - 700.0 / 12))
-						`<strong>{attacks>0 ? ((1000 / 6.0) * (to_float(b + c) / attacks - 1.0 / 12)).to_string("%+.0f") : '0'}</strong> favor ({b}:{c})`+
-						`<span style="background-color:{colorize(a)};"}>{a.to_string("%.1f")}%</span>`+
+						# 100 * (((atk_wins + atk_loss) * 7.0 / total_attacks - 7.0 / 12))
+						`<small><strong>{total_attacks>0 ? favor_atk.to_string("%+.0f") : '0'} favor ({atk_wins}:{atk_loss})</strong></small>`+
+						`<span style="background-color:{colorize(win_rate)};"}>{win_rate.to_string("%.1f")}%</span>`+
 					`</td>`+
 					`<td align="center" style="white-space: nowrap;">`+
-						`<strong>{defends>0 ? ((1000 / 6.0) * (to_float(y + z) / defends - 1.0 / 12)).to_string("%+.0f") : '0'}</strong> favor ({y}:{z})`+
-						`<span style="background-color:{colorize(x)};"}>{x.to_string("%.1f")}%</span>`+
+						`<small><strong>{total_defends>0 ? favor_def.to_string("%+.0f") : '0'} favor ({def_wins}:{def_loss})</strong></small>`+
+						`<span style="background-color:{colorize(loss_rate)};"}>{loss_rate.to_string("%.1f")}%</span>`+
 					`</td>`);
 			}
 			s.write();
@@ -183,7 +199,9 @@ void main() {
 		string outro = "</table><p><small>" + page.split_string("</td></tr></table><p><small>")[1];
 		string footnote = "</small></p><p><small>** Favor measures how popular the mini-competitions are. Higher favor means chosen more often when attacking. </small></p>"
 						+ "<p><small>*** Stats above are calculated over your last " + scanThisMany + " fights. Change this number with CLI command <code>flogger history</code>.</small></p>"
-						+ `<p><small>Net: {fame.to_string('%+d')} fame, {swagger} swagger, {flowers} flowers, {winningness.to_string('%+d')} winningness, and {substats} substats.</small></p>`;
+						+ `<p><small>You won {cumulative[true,true]} / {cumulative[true,true]+cumulative[true,false]} attacks ({cumulative[true,true].out_of(cumulative[true,false]).to_string('%.1f%%')}) `
+						+ `and {cumulative[false,true]} / {cumulative[false,true]+cumulative[false,false]} defends ({cumulative[false,true].out_of(cumulative[false,false]).to_string('%.1f%%')}).</br>`
+						+ `Net: {fame.to_string('%+d')} fame, {swagger} swagger, {flowers} flowers, {winningness.to_string('%+d')} winningness, and {substats} substats.</small></p>`;
 		outro.append_child("<p>(.+)</p>", footnote).write();
 	}
 }
