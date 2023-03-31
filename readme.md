@@ -18,7 +18,6 @@ Try it out: `svn checkout https://github.com/DamianDominoDavis/kol-flogger/trunk
 <a href="https://raw.githubusercontent.com/DamianDominoDavis/kol-flogger/main/example.png?raw=true"><img alt="Example" src="https://raw.githubusercontent.com/DamianDominoDavis/kol-flogger/main/example.png?raw=true" width="650" height="646"/></a>
 
 ##### Roadmap:
-1. Requested: move Flogger to an awesome menu relay link
-2. Requested: track loot gained, loot lost 
-3. add name/ID filter box to archive page
-4. fix compact mode
+1. Requested: track loot gained, loot lost 
+2. add name/ID filter box to archive page
+3. fix compact mode

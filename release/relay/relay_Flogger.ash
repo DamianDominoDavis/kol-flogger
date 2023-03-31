@@ -50,9 +50,9 @@ void main() {
 	// override the rules
 	// only when it's seasonal
 	// and we've been fighting
-	string page = visit_url().to_string();
+	string page = visit_url("peevpee.php?place=rules").to_string();
 	string[int] log = visit_url("peevpee.php?place=logs&mevs=0&oldseason=0&showmore=1", false).xpath('//table//table//table//table//tr');
-	if (form_field("place") != "rules" || season_int() == 0 || log.count() < 2) {
+	if (season_int() == 0 || log.count() < 2) {
 		page.write();
 		return;
 	}
