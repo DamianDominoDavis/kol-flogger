@@ -62,23 +62,7 @@ fite examine_fite(int lid) {
 			foreach s,b in out.rounds print(`{stance_to_int[s]}: {b}`);
 		}
 	}
-	else {	// compact mode, unreachable code
-		fighters = buf.xpath("//table//table//table//table//tr//a/text()");	
-		stances = buf.xpath("//table//table//table//table//td[1]/b/text()");
-		results = buf.xpath("//table//table//table//table//td[2]/text()");
-		foreach i in stances
-			stances[i] = stances[i].replace_string('Rrr','R').replace_string('rrr','r');
-		out.attacking = (my_name().to_lower_case() == fighters[0].to_lower_case());
-		for i from 0 to 6 {
-			results[i] = ( group_count(create_matcher("("+fighters[0].to_lower_case()+")", results[i])) 
-				> group_count(create_matcher("("+fighters[1].to_lower_case()+")", results[i])) )
-				? fighters[0] : fighters[1];
-		}
-		for i from 0 to 6
-			out.rounds[stances[i]] = (!(out.attacking ^ (my_name().to_lower_case() == results[i].to_lower_case())));
-		// if (lid == debug_fite_id)
-		//	print();
-	}
+	else abort("Turn off compact mode in your vanilla KOL options.");
 	return out;
 }
 

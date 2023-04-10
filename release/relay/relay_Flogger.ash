@@ -43,7 +43,7 @@ string append_child(string original, string tag_patten, string content) {
 }
 
 float out_of(float a,float b) {
-	return (100.0 * a) / (a + b);
+	return (a+b==0)? 0 : (100.0 * a) / (a + b);
 }
 
 void main() {
@@ -113,10 +113,10 @@ void main() {
 		scanThisMany = prefs["freshness"].to_int();
 		if (scanThisMany < 1)
 			scanThisMany = 1000;
-		int scannedSoFar = 0;
-		foreach L in memory if (memory.count() - scannedSoFar++ <= scanThisMany) {
-			cumulative[f.attacking,f.won()]++;
+		int skipThisMany = memory.count() - scanThisMany;
+		foreach L in memory if (skipThisMany-- <= 0) {
 			f = memory[L].from_string();
+			cumulative[f.attacking,f.won()]++;
 			if (f.fame != 0) {
 				fame += f.fame;
 				winningness += f.won()? 1 : -1;
@@ -178,8 +178,8 @@ void main() {
 					def_loss = scores[mini,false,false];
 					loss_rate = out_of(def_wins, def_loss);
 				}
-				float favor_atk = (100 * 10 / 6.0) * (to_float(atk_wins + atk_loss) / total_attacks - 1.0 / 12);
-				float favor_def = (100 * 10 / 6.0) * (to_float(def_wins + def_loss) / total_defends - 1.0 / 12);
+				float favor_atk = (total_attacks <1) ? 0 : (100 * 10 / 6.0) * (to_float(atk_wins + atk_loss) / total_attacks - 1.0 / 12);
+				float favor_def = (total_defends <1) ? 0 : (100 * 10 / 6.0) * (to_float(def_wins + def_loss) / total_defends - 1.0 / 12);
 				//float rate_atk = (100) * (to_float(atk_wins + atk_loss) * 7.0 / total_attacks);
 				//float rate_def = (100) * (to_float(def_wins + def_loss) * 7.0 / total_defends);
 				s = s.append_child('<tr class="small">(.+)</tr>',
