@@ -1,19 +1,12 @@
 record fite {
 	boolean attacking;
-	boolean[string] rounds;
+	string[string] rounds;
 	int fame;
 	int substats;
 	int swagger;
 	int flowers;
 	item prize;
 };
-
-boolean won(fite f) {
-	int w;
-	foreach mini,result in f.rounds
-		w += (result? 1 : -1);
-	return (w > 0);
-}
 
 // minified stance "enum"
 static int[string] stance_to_int;
@@ -24,12 +17,37 @@ if (stance_to_int.count() < 1) {
 	foreach k,s in info.xpath('//table//table//table//tr//td[1]//text()') {
 		string unstarred = (s.char_at(s.length()-1) =='*') ? s.substring(0, s.length()-1) : s;
 		string unarrred = unstarred.replace_string('Rrr','R').replace_string('rrr','r');
-		stance_to_int[unarrred] = k;
-		int_to_stance[k] = unarrred;
+		string unstabbed = unstarred.replace_string('&dagger;','');
+		stance_to_int[unstabbed] = k;
+		int_to_stance[k] = unstabbed;
 	}
 }
-if (stance_to_int.count()!=12) abort('What are we fighting about?');
-// else foreach i,s in int_to_stance print(`{i}: {s}`);
+// if (stance_to_int.count()!=12) abort('What are we fighting about?'); else foreach i,s in int_to_stance print(`{i}: {s}`);
+
+string win_lose_draw(boolean attacking, boolean attacker_win, boolean defender_win) {
+	if (attacker_win && defender_win)
+		abort("double wins are draws? something is wrong");
+	if ((attacking && attacker_win) || (!attacking && defender_win))
+		return('W');
+	if ((attacking && defender_win) || (!attacking && attacker_win))
+		return('L');
+	if (!attacker_win && !defender_win)
+		return('D');
+	abort ('who won? who\'s next? you decide.');
+	return "X";
+}
+
+boolean won(fite f) {
+	int w,l,d;
+	foreach mini,result in f.rounds
+		switch(result) {
+			case ("W"): w++; break;
+			case ("L"): l++; break;
+			case ("D"): d++; break;
+			default: abort("what hap");
+		}
+	return f.attacking ? w > l : w >= l;
+}
 
 // fite constructor, takes uids from pvp log page links
 fite examine_fite(int lid) {
@@ -37,32 +55,35 @@ fite examine_fite(int lid) {
 	buffer buf = visit_url("peevpee.php?action=log&ff=1&lid="+lid+"&place=logs&pwd", false);
 	string[int] fighters;
 	string[int] stances;
-	string[int] results;
+	string[int] attacker_results;
+	string[int] defender_results;
 	int debug_fite_id = -1;
 
-	if (buf.xpath("//div[@class='fight']").count() > 0) { // expanded mode
-		fighters = buf.xpath("//div[@class='fight']/a/text()");
-		stances = buf.xpath("//tr[@class='mini']/td/center/b/text()");
-		results = buf.xpath("//tr[@class='mini']/td[1]");
-		foreach i in stances
-			stances[i] = stances[i].replace_string('Rrr','R').replace_string('rrr','r');
-		out.attacking = (my_name().to_lower_case() == fighters[0].to_lower_case());
-		foreach i,mini in stances {
-			out.rounds[mini] = (!(out.attacking ^ results[i].contains_text("youwin")));
-		}
-		if (lid == debug_fite_id) {
-			print('attacking:' + out.attacking);
-			print('Fighters:');
-			foreach i,f in fighters print(`{i}: {f}`);
-			print('stances:');
-			foreach i,s in stances print(`{i}: {s}`);
-			print('results:');
-			foreach i,r in results print(`{i}: {r}`);
-			print('out.rounds:');
-			foreach s,b in out.rounds print(`{stance_to_int[s]}: {b}`);
-		}
+	if (buf.xpath("//div[@class='fight']").count() <= 0) // require expanded mode
+		abort("Turn off compact mode in your vanilla KOL options.");
+
+	fighters = buf.xpath("//div[@class='fight']/a/text()");
+	stances = buf.xpath("//tr[@class='mini']/td/center/b/text()");
+	attacker_results = buf.xpath("//tr[@class='mini']/td[1]");
+	defender_results = buf.xpath("//tr[@class='mini']/td[3]");
+	foreach i in stances
+		stances[i] = stances[i].replace_string('Rrr','R').replace_string('rrr','r');
+	out.attacking = (my_name().to_lower_case() == fighters[0].to_lower_case());
+	foreach i,mini in stances
+		out.rounds[mini] = win_lose_draw(out.attacking, attacker_results[i].contains_text("youwin"), defender_results[i].contains_text("youwin"));
+	if (lid == debug_fite_id) {
+		print('attacking:' + out.attacking);
+		print('Fighters:');
+		foreach i,f in fighters
+			print(`{i}: {f}`);
+		print('stances:');
+		foreach i,s in stances
+			print(`{i}: {s} {attacker_results[i].contains_text("youwin")} {defender_results[i].contains_text("youwin")}`);
+		print('out.rounds:');
+		foreach s,b in out.rounds
+			print(`{s}: {b}`);
+		print('I AM WINNER: ' + (out.won()));
 	}
-	else abort("Turn off compact mode in your vanilla KOL options.");
 	return out;
 }
 
@@ -71,9 +92,9 @@ fite from_string(string s) {
 	fite out;
 	out.attacking = (s.char_at(0) == 'a');
 	string tring = s.substring(1);
-	string[int,int] groups = tring.group_string('([0-9AB][01])');
+	string[int,int] groups = tring.group_string('([0-9AB][WLD])');
 	foreach i in groups
-		out.rounds[int_to_stance[from_hex[groups[i,0].char_at(0)]]] = (groups[i,0].char_at(1) == '1');
+		out.rounds[int_to_stance[from_hex[groups[i,0].char_at(0)]]] = groups[i,0].char_at(1);
 	string[int] rest = tring.split_string(' ');
 	out.fame = rest[1].to_int();
 	out.substats = rest[2].to_int();
@@ -86,7 +107,7 @@ fite from_string(string s) {
 string to_string(fite f) {
 	string out = (f.attacking? 'a':'d');
 	foreach mini,winner in f.rounds
-		out += stance_to_int[mini].to_string('%X') + (winner? '1' : '0');
+		out += stance_to_int[mini].to_string('%X') + winner;
 	return out + ` {f.fame} {f.substats} {f.swagger} {f.flowers}`; // {f.prize}
 }
 

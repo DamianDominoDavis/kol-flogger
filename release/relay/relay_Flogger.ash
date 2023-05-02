@@ -125,7 +125,7 @@ void main() {
 			swagger += f.swagger;
 			flowers += f.flowers;
 			foreach mini,winner in f.rounds
-				scores[mini, f.attacking, winner]++;
+				scores[mini, f.attacking, winner=='W']++;
 			if (gonna > 0 && ++got % 50 == 0)
 				map_to_file(memory, file);
 		}
