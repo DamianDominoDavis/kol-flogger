@@ -157,7 +157,7 @@ void main() {
 			else
 				total_defends += scores[mini,attacking,win];
 		}
-		foreach i,s in page.xpath("//table//table//table//tr") {
+		foreach i,s in page.xpath("//table//table//table[2]//tr") {
 			if (i == 0)
 				s = s.append_child("<tr>(.+)</tr>", "<th>Attacking</th><th>Defending</th>");
 			else {
@@ -182,7 +182,7 @@ void main() {
 				float favor_def = (total_defends <1) ? 0 : (100 * 10 / 6.0) * (to_float(def_wins + def_loss) / total_defends - 1.0 / 12);
 				//float rate_atk = (100) * (to_float(atk_wins + atk_loss) * 7.0 / total_attacks);
 				//float rate_def = (100) * (to_float(def_wins + def_loss) * 7.0 / total_defends);
-				s = s.append_child('<tr class="small">(.+)</tr>',
+				s = s.append_child('<tr class="small">\(.+\)</tr>',
 					`<td align="center" style="white-space: nowrap;">`+
 						# 100 * (((atk_wins + atk_loss) * 7.0 / total_attacks - 7.0 / 12))
 						`<small><strong>{total_attacks>0 ? favor_atk.to_string("%+.0f") : '0'} favor ({atk_wins}:{atk_loss})</strong></small>`+

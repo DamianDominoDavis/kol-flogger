@@ -11,18 +11,18 @@ record fite {
 // minified stance "enum"
 static int[string] stance_to_int;
 static string[int] int_to_stance;
-int[string] from_hex = {'0':0,'1':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'A':10,'B':11};
+int[string] from_hex = {'0':0,'1':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'A':10,'B':11,'C': 12};
 if (stance_to_int.count() < 1) {
 	buffer info = visit_url('peevpee.php?place=rules', false);
-	foreach k,s in info.xpath('//table//table//table//tr//td[1]//text()') {
-		string unstarred = (s.char_at(s.length()-1) =='*') ? s.substring(0, s.length()-1) : s;
+	foreach k,s in info.xpath('//table//table//table//tr/td[1]/b/text()') {
+		string unstarred = (s.length() > 1 &&  s.char_at(s.length()-1) =='*') ? s.substring(0, s.length()-1) : s;
 		string unarrred = unstarred.replace_string('Rrr','R').replace_string('rrr','r');
-		string unstabbed = unstarred.replace_string('&dagger;','');
+		string unstabbed = unarrred.replace_string('&dagger;','');
 		stance_to_int[unstabbed] = k;
 		int_to_stance[k] = unstabbed;
 	}
 }
-// if (stance_to_int.count()!=12) abort('What are we fighting about?'); else foreach i,s in int_to_stance print(`{i}: {s}`);
+// if (stance_to_int.count()!=12) abort('What are we fighting about?'); else */foreach i,s in int_to_stance print(`{i}: {s}`);
 
 string win_lose_draw(boolean attacking, boolean attacker_win, boolean defender_win) {
 	if (attacker_win && defender_win)
@@ -92,7 +92,7 @@ fite from_string(string s) {
 	fite out;
 	out.attacking = (s.char_at(0) == 'a');
 	string tring = s.substring(1);
-	string[int,int] groups = tring.group_string('([0-9AB][WLD])');
+	string[int,int] groups = tring.group_string('([0-9ABC][WLD])');
 	foreach i in groups
 		out.rounds[int_to_stance[from_hex[groups[i,0].char_at(0)]]] = groups[i,0].char_at(1);
 	string[int] rest = tring.split_string(' ');
