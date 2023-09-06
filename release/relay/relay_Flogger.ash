@@ -157,7 +157,7 @@ void main() {
 			else
 				total_defends += scores[mini,attacking,win];
 		}
-		foreach i,s in page.xpath("//table//table//table[2]//tr") {
+		foreach i,s in page.xpath("//table//table//table//tr") {
 			if (i == 0)
 				s = s.append_child("<tr>(.+)</tr>", "<th>Attacking</th><th>Defending</th>");
 			else {

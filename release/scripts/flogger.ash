@@ -22,7 +22,7 @@ if (stance_to_int.count() < 1) {
 		int_to_stance[k] = unstabbed;
 	}
 }
-// if (stance_to_int.count()!=12) abort('What are we fighting about?'); else */foreach i,s in int_to_stance print(`{i}: {s}`);
+foreach i,s in int_to_stance print(`{i}: {s}`); if (stance_to_int.count()!=12) abort('What are we fighting about?');
 
 string win_lose_draw(boolean attacking, boolean attacker_win, boolean defender_win) {
 	if (attacker_win && defender_win)
