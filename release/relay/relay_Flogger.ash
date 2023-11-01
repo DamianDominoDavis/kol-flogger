@@ -119,7 +119,8 @@ void main() {
 			cumulative[f.attacking,f.won()]++;
 			if (f.fame != 0) {
 				fame += f.fame;
-				winningness += f.won()? 1 : -1;
+				if (f.attacking)
+					winningness += f.won()? 1 : -1;
 			}
 			substats += f.substats;
 			swagger += f.swagger;
