@@ -15,11 +15,12 @@ int[string] from_hex = {'0':0,'1':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9
 if (stance_to_int.count() < 1) {
 	buffer info = visit_url('peevpee.php?place=rules', false);
 	foreach k,s in info.xpath('//table//table//table//tr/td[1]/b/text()') {
-		string unstarred = (s.length() > 1 &&  s.char_at(s.length()-1) =='*') ? s.substring(0, s.length()-1) : s;
-		string unarrred = unstarred.replace_string('Rrr','R').replace_string('rrr','r');
-		string unstabbed = unarrred.replace_string('&dagger;','');
-		stance_to_int[unstabbed] = k;
-		int_to_stance[k] = unstabbed;
+		string stripped = (s.length() > 1 &&  s.char_at(s.length()-1) =='*') ? s.substring(0, s.length()-1) : s;
+		stripped = stripped.replace_string('Rrr','R').replace_string('rrr','r');
+		stripped = stripped.replace_string('†','').replace_string('&#8224;','').replace_string('&dagger;','');
+		stripped = stripped.replace_string('‡','').replace_string('&#8225;','').replace_string('&Dagger;','');
+		stance_to_int[stripped] = k;
+		int_to_stance[k] = stripped;
 	}
 }
 // foreach i,s in int_to_stance print(`{i}: {s}`); if (stance_to_int.count()!=12) abort('What are we fighting about?');
