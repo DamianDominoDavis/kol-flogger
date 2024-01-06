@@ -22,8 +22,13 @@ if (stance_to_int.count() < 1) {
 		stance_to_int[stripped] = k;
 		int_to_stance[k] = stripped;
 	}
+	if (stance_to_int.count() == 11) {
+		int_to_stance[12] = "[ tiebreaker ]";
+		stance_to_int["[ tiebreaker ]"] = 12;
+	}
 }
-// foreach i,s in int_to_stance print(`{i}: {s}`); if (stance_to_int.count()!=12) abort('What are we fighting about?');
+// foreach i,s in int_to_stance print(`{i}: {s}`);
+// if (stance_to_int.count()!=12) abort('What are we fighting about?');
 
 string win_lose_draw(boolean attacking, boolean attacker_win, boolean defender_win) {
 	if (attacker_win && defender_win)
@@ -34,7 +39,7 @@ string win_lose_draw(boolean attacking, boolean attacker_win, boolean defender_w
 		return('L');
 	if (!attacker_win && !defender_win)
 		return('D');
-	abort ('who won? who\'s next? you decide.');
+	abort ("who won? who\'s next? you decide.");
 	return "X";
 }
 
@@ -58,20 +63,24 @@ fite examine_fite(int lid) {
 	string[int] stances;
 	string[int] attacker_results;
 	string[int] defender_results;
-	int debug_fite_id = -1;
+	int debug_fite_id = 77871;
 
 	if (buf.xpath("//div[@class='fight']").count() <= 0) // require expanded mode
 		abort("Turn off compact mode in your vanilla KOL options.");
 
 	fighters = buf.xpath("//div[@class='fight']/a/text()");
-	stances = buf.xpath("//tr[@class='mini']/td/center/b/text()");
+	stances = buf.xpath("//tr[@class='mini']/td/center");
 	attacker_results = buf.xpath("//tr[@class='mini']/td[1]");
 	defender_results = buf.xpath("//tr[@class='mini']/td[3]");
-	foreach i in stances
-		stances[i] = stances[i].replace_string('Rrr','R').replace_string('rrr','r');
+	foreach i in stances {
+		stances[i] = stances[i].xpath("//b/text()")[0].replace_string('Rrr','R').replace_string('rrr','r');
+		if (stances[i] == "")
+			stances[i] = "[ tiebreaker ]";
+	}
 	out.attacking = (my_name().to_lower_case() == fighters[0].to_lower_case());
 	foreach i,mini in stances
 		out.rounds[mini] = win_lose_draw(out.attacking, attacker_results[i].contains_text("youwin"), defender_results[i].contains_text("youwin"));
+
 	if (lid == debug_fite_id) {
 		print('attacking:' + out.attacking);
 		print('Fighters:');
