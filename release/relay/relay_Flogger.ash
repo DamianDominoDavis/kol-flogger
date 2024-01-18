@@ -162,7 +162,7 @@ void main() {
 			if (i == 0)
 				s = s.append_child("<tr>(.+)</tr>", "<th>Attacking</th><th>Defending</th>");
 			else {
-				string mini = int_to_stance[i-1];
+				string mini = stance_bimap[""+(i-1)];
 				int atk_wins;
 				int atk_loss;
 				int def_wins;
