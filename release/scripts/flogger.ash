@@ -31,8 +31,9 @@ if (stance_bimap.count() < 1) {
 		stance_bimap[stance_name(s)] = k.to_string("%X");
 	}
 	if (stance_bimap.count() < 2*12) {
-		stance_bimap["B"] = "[ tiebreaker ]";
-		stance_bimap["[ tiebreaker ]"] = "B";
+		int k = stance_bimap.count() - stance_bimap.count() / 2;
+		stance_bimap[k.to_string("%X")] = "[ tiebreaker ]";
+		stance_bimap["[ tiebreaker ]"] = k.to_string("%X");
 	}
 }
 // foreach i,s in stance_bimap print(`{i}: {s}`);
