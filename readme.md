@@ -1,19 +1,20 @@
 # Flogger
 
-"What's this shit, standing around watching the game? Get in there, put a helmet on, and hurt somebody."
-
+"You know, what's this shit, standing around watching the game?<br/>
+Get in there, put a helmet on and hurt somebody for Chrissakes, will you?<br/>
+**You're not getting paid to watch!**"<br/>
 – George Carlin, "Sports", *Playin' with Your Head*, 1986
 
-**Flogger** is a relay script for <a href="https://github.com/kolmafia/kolmafia">KoLmafia</a> wchich caches your pvp fites and shows win rate and stance frequency statistics. (If you're caching a LOT of new fites, there will be a pause. If you need to, you can cancel the script from the KoLmafia interface with Escape – your cache progress will always be saved.)
+__***Flogger***__ is a relay script for <a href="https://github.com/kolmafia/kolmafia">KoLmafia</a> which shows PvP win rate and stance frequency statistics. (Afterwards, it's faster; but running this script for the first time can take up to one minute.)
 
-Try it out: `svn checkout https://github.com/DamianDominoDavis/kol-flogger/trunk/release/`
+Try it out: `git checkout DamianDominoDavis/kol-flogger`
 
 ##### CLI Settings:
 - `flogger help` — print these messages
-- `flogger history` — adjust the number of fresh fites to review
+- `flogger history` — adjust for how many most recent fights to show stats
 - `flogger purge` — empty the cache and prepare to rescan
 - `flogger backup` — copy cache to a backup safe from `purge`
-- `flogger recolor` — cycle display colors
+- `flogger recolor` — change colorblind modes
 
 <a href="https://raw.githubusercontent.com/DamianDominoDavis/kol-flogger/main/example.png"><img alt="Example" src="https://raw.githubusercontent.com/DamianDominoDavis/kol-flogger/main/example.png" style="max-width: 100%;" /></a>
 
