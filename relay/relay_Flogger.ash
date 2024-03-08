@@ -90,6 +90,7 @@ void main() {
 	int[string,boolean,boolean] scores;
 	int[boolean,boolean] cumulative;
 	int scanThisMany = 1000;
+	int perfect;
 
 	try {
 		fite f;
@@ -127,6 +128,8 @@ void main() {
 			flowers += f.flowers;
 			foreach mini,winner in f.rounds
 				scores[mini, f.attacking, winner=='W']++;
+			if (f.flawless())
+				perfect++;
 			if (gonna > 0 && ++got % 50 == 0)
 				map_to_file(memory, file);
 		}
@@ -202,7 +205,7 @@ void main() {
 						+ "<p><small>*** Stats above are calculated over your last " + scanThisMany + " fights. Change this number with CLI command <code>flogger history</code>.</small></p>"
 						+ `<p><small>You won {cumulative[true,true]} / {cumulative[true,true]+cumulative[true,false]} attacks ({cumulative[true,true].out_of(cumulative[true,false]).to_string('%.1f%%')}) `
 						+ `and {cumulative[false,true]} / {cumulative[false,true]+cumulative[false,false]} defends ({cumulative[false,true].out_of(cumulative[false,false]).to_string('%.1f%%')}).</br>`
-						+ `Net: {fame.to_string('%+d')} fame, {swagger} swagger, {flowers} flowers, {winningness.to_string('%+d')} winningness, and {substats} substats.</small></p>`;
+						+ `Net: {fame.to_string('%+d')} fame, {swagger} swagger ({perfect} from flawless victory), {flowers} flowers, {winningness.to_string('%+d')} winningness, and {substats} substats.</small></p>`;
 		outro.append_child("<p>(.+)</p>", footnote).write();
 	}
 }

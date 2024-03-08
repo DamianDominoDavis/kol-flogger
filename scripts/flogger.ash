@@ -64,6 +64,20 @@ boolean won(fite f) {
 	return f.attacking ? w > l : w >= l;
 }
 
+boolean flawless(fite f) {
+	if (!f.attacking)
+		return false;
+	int w,l,d;
+	foreach mini,result in f.rounds
+		switch(result) {
+			case ("W"): w++; break;
+			case ("L"): l++; break;
+			case ("D"): d++; break;
+			default: abort("what hap");
+		}
+	return (w == 7);
+}
+
 // fite constructor, takes uids from pvp log page links
 fite examine_fite(int lid) {
 	fite out;
