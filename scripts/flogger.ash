@@ -9,11 +9,13 @@ record fite {
 };
 
 string stance_name(string s) {
-	static string[string] cache;
+	static string[string] cache = {"" : "[ tiebreaker ]"};
 	if (!(cache contains s)) {
-		string stripped = (s.length() > 1 &&  s.char_at(s.length()-1) =='*') ? s.substring(0, s.length()-1) : s;
-		if (!($strings[Purrrity,Thirrrsty forrr Booze] contains s))
+		string stripped = (s.length() > 1 && s.char_at(s.length()-1) =='*') ? s.substring(0, s.length()-1) : s;
+		if (!($strings[Purrrity,Thirrrsty forrr Booze] contains stripped))
 			stripped = stripped.replace_string('Rrr','R').replace_string('rrr','r');
+		if ($strings[Visiting The Co@^&amp;$`~] contains stripped)
+			stripped = stripped.entity_decode();
 		stripped = stripped.replace_string('†','').replace_string('&#8224;','').replace_string('&dagger;','');
 		stripped = stripped.replace_string('‡','').replace_string('&#8225;','').replace_string('&Dagger;','');
 		stripped = stripped.replace_string('&apos;',"'").replace_string('&#39;',"'");
@@ -30,14 +32,9 @@ if (stance_bimap.count() < 1) {
 		stance_bimap[k.to_string("%X")] = stance_name(s);
 		stance_bimap[stance_name(s)] = k.to_string("%X");
 	}
-	if (stance_bimap.count() < 2*12) {
-		int k = stance_bimap.count() - stance_bimap.count() / 2;
-		stance_bimap[k.to_string("%X")] = "[ tiebreaker ]";
-		stance_bimap["[ tiebreaker ]"] = k.to_string("%X");
-	}
+	if (stance_bimap.count() < 2*12)
+		abort("what's all the ruckus?");
 }
-// foreach i,s in stance_bimap print(`{i}: {s}`);
-// if (stance_bimap.count()!=24) abort('What are we fighting about?');
 
 string win_lose_draw(boolean attacking, boolean attacker_win, boolean defender_win) {
 	if (attacker_win && defender_win)
@@ -86,7 +83,7 @@ fite examine_fite(int lid) {
 	string[int] stances;
 	string[int] attacker_results;
 	string[int] defender_results;
-	int debug_fite_id = 77871;
+	int debug_fite_id = 13683;
 
 	if (buf.xpath("//div[@class='fight']").count() <= 0) // require expanded mode
 		abort("Turn off compact mode in your vanilla KOL options.");
@@ -95,27 +92,36 @@ fite examine_fite(int lid) {
 	stances = buf.xpath("//tr[@class='mini']/td/center");
 	attacker_results = buf.xpath("//tr[@class='mini']/td[1]");
 	defender_results = buf.xpath("//tr[@class='mini']/td[3]");
-	foreach i in stances {
+	foreach i in stances
 		stances[i] = stances[i].xpath("//b/text()")[0].stance_name();
-		if (stances[i] == "")
-			stances[i] = "[ tiebreaker ]";
-	}
 	out.attacking = (my_name().to_lower_case() == fighters[0].to_lower_case());
 	foreach i,mini in stances
 		out.rounds[mini] = win_lose_draw(out.attacking, attacker_results[i].contains_text("youwin"), defender_results[i].contains_text("youwin"));
 
 	if (lid == debug_fite_id) {
-		print('attacking:' + out.attacking);
-		print('Fighters:');
-		foreach i,f in fighters
-			print(`{i}: {f}`);
-		print('stances:');
-		foreach i,s in stances
-			print(`{i}: {s} {attacker_results[i].contains_text("youwin")} {defender_results[i].contains_text("youwin")}`);
-		print('out.rounds:');
-		foreach s,b in out.rounds
-			print(`{s}: {b}`);
-		print('I AM WINNER: ' + (out.won()));
+		string attacker = out.attacking ? fighters[0] : fighters[1];
+		string defender = out.attacking ? fighters[1] : fighters[0];
+		print(`{attacker} attacks {defender}!`);
+		foreach i,s in stances {
+			if (!(stance_bimap contains s)) {
+				buffer b = "[";
+				if (length(s) > 0) {
+					for i from 0 to (length(s) - 1) {
+						b.append(`'{s.char_at(i)}'`);
+						if (i < length(s) - 1)
+							b.append(", ");
+					}
+				}
+				print("unknown stance:" + b, "red");
+			}
+			if (out.rounds[s] == 'D')
+				print(`[{stance_bimap[s]}]: draw!`);
+			else if (attacker_results[i].contains_text("youwin"))
+				print(`[{stance_bimap[s]}]: {attacker} beat {defender} at {s}`);
+			else
+				print(`[{stance_bimap[s]}]: {defender} beat {attacker} at {s}`);
+		}
+		print('WINNER: ' + (out.won() ? attacker : defender));
 	}
 	return out;
 }
@@ -133,7 +139,7 @@ fite from_string(string s) {
 	out.substats = rest[2].to_int();
 	out.swagger = rest[3].to_int();
 	out.flowers = rest[4].to_int(); 
-//	out.prize = rest[5].to_item();
+	out.prize = rest[5].to_item();
 	return out;
 }
 
@@ -141,7 +147,7 @@ string to_string(fite f) {
 	string out = (f.attacking? 'a':'d');
 	foreach mini,winner in f.rounds
 		out += stance_bimap[mini] + winner;
-	return out + ` {f.fame} {f.substats} {f.swagger} {f.flowers}`; // {f.prize}
+	return out + ` {f.fame} {f.substats} {f.swagger} {f.flowers} {f.prize}`;
 }
 
 int season_int() {
@@ -157,9 +163,9 @@ int season_int() {
 }
 
 string[string] flags = {
-	"backup" 	: "copy cache to a backup",
+	"backup"	: "copy cache to a backup",
 	"help"		: "print these messages",
-	"history"	: "toggle calculating only the last 1000 fites / all cached fites",
+	"history"	: "adjust how many recent fights to calculate",
 	"purge"		: "empty the cache",
 	"recolor"	: "change colorblind modes"
 };
