@@ -8,7 +8,7 @@ Get in there, put a helmet on and hurt somebody for Chrissakes, will you?<br/>
 __***Flogger***__ is a relay script for <a href="https://github.com/kolmafia/kolmafia">KoLmafia</a> which shows PvP win rate and stance frequency statistics. (Afterwards, it's faster; but running this script for the first time can take up to one minute.)
 
 Try it out: `git checkout DamianDominoDavis/kol-flogger release`<br/>
-Need to uninstall SVN? `svn delete DamianDominoDavis-kol-flogger-trunk-release`
+Run from the drop-down in the top pane of the relay browser.
 
 ##### CLI Settings:
 - `flogger help` — print these messages
