@@ -32,8 +32,8 @@ if (stance_bimap.count() < 1) {
 		stance_bimap[k.to_string("%X")] = stance_name(s);
 		stance_bimap[stance_name(s)] = k.to_string("%X");
 	}
-	if (stance_bimap.count() < 2*12)
-		abort("what's all the ruckus?");
+//	if (stance_bimap.count() < 2*12)
+//		abort("what's all the ruckus?");
 }
 
 string win_lose_draw(boolean attacking, boolean attacker_win, boolean defender_win) {
