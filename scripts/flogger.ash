@@ -8,8 +8,10 @@ record fite {
 	item prize;
 };
 
+boolean[int] debug_fite_ids = $ints[-1];// $ints[197411, 197417, 195998, 200190, 202660];
+
 string stance_name(string s) {
-	static string[string] cache = {"" : "[ tiebreaker ]"};
+	static string[string] cache = {"" : "[ nameless ]"};
 	if (!(cache contains s)) {
 		string stripped = (s.length() > 1 && s.char_at(s.length()-1) =='*') ? s.substring(0, s.length()-1) : s;
 		if (!($strings[Purrrity,Thirrrsty forrr Booze] contains stripped))
@@ -32,8 +34,6 @@ if (stance_bimap.count() < 1) {
 		stance_bimap[k.to_string("%X")] = stance_name(s);
 		stance_bimap[stance_name(s)] = k.to_string("%X");
 	}
-//	if (stance_bimap.count() < 2*12)
-//		abort("what's all the ruckus?");
 }
 
 string win_lose_draw(boolean attacking, boolean attacker_win, boolean defender_win) {
@@ -83,7 +83,6 @@ fite examine_fite(int lid) {
 	string[int] stances;
 	string[int] attacker_results;
 	string[int] defender_results;
-	int debug_fite_id = 13683;
 
 	if (buf.xpath("//div[@class='fight']").count() <= 0) // require expanded mode
 		abort("Turn off compact mode in your vanilla KOL options.");
@@ -97,22 +96,24 @@ fite examine_fite(int lid) {
 	out.attacking = (my_name().to_lower_case() == fighters[0].to_lower_case());
 	foreach i,mini in stances
 		out.rounds[mini] = win_lose_draw(out.attacking, attacker_results[i].contains_text("youwin"), defender_results[i].contains_text("youwin"));
-
-	if (lid == debug_fite_id) {
+	string[int,int] loot_maybe = buf.group_string("<td.+?You acquire an item: (.+)</td>");
+	if (count(loot_maybe) > 0) {
+		string prize = loot_maybe[0,1].group_string("<b>(.+)<font size=1")[0,1].group_string("(.+)</b>")[0,1];
+		out.prize = to_item(prize);
+	}
+	if (debug_fite_ids contains lid) {
 		string attacker = out.attacking ? fighters[0] : fighters[1];
 		string defender = out.attacking ? fighters[1] : fighters[0];
 		print(`{attacker} attacks {defender}!`);
 		foreach i,s in stances {
-			if (!(stance_bimap contains s)) {
-				buffer b = "[";
-				if (length(s) > 0) {
-					for i from 0 to (length(s) - 1) {
-						b.append(`'{s.char_at(i)}'`);
-						if (i < length(s) - 1)
-							b.append(", ");
-					}
+			if (!(stance_bimap contains s) && length(s) > 0) {
+				buffer b = "unknown stance: [";
+				for i from 0 to (length(s) - 1) {
+					b.append(`'{s.char_at(i)}'`);
+					if (i < length(s) - 1)
+						b.append(", ");
 				}
-				print("unknown stance:" + b, "red");
+				print(b, "red");
 			}
 			if (out.rounds[s] == 'D')
 				print(`[{stance_bimap[s]}]: draw!`);
@@ -121,7 +122,7 @@ fite examine_fite(int lid) {
 			else
 				print(`[{stance_bimap[s]}]: {defender} beat {attacker} at {s}`);
 		}
-		print('WINNER: ' + (out.won() ? attacker : defender));
+		print("WINNER: " + (out.won() ? attacker : defender));
 	}
 	return out;
 }

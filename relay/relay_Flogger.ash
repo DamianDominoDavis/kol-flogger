@@ -1,7 +1,6 @@
 // study, grasshopper
 // learn over one thousand fights
 // which kung fu is best
-
 import <flogger.ash>
 
 // Xth value along
@@ -70,7 +69,6 @@ void main() {
 		return;
 	}
 
-
 	// load from memory
 	// tally up wins and losses
 	// save to file sometimes
@@ -83,9 +81,8 @@ void main() {
 		if (!(memory contains L))
 			gonna++;
 	}
-	if (gonna > 0) {
+	if (gonna > 0)
 		print('flogger caching '+gonna+' new recent fites...');
-	}
 
 	int[string,boolean,boolean] scores;
 	int[boolean,boolean] cumulative;
@@ -98,13 +95,15 @@ void main() {
 		foreach i,s in log if (i!=0) {
 			int L = s.group_string('lid=(\\d+)')[0,1].to_int();
 			to_score[to_score.count()] = L;
-			if (!(memory contains L)) {
+			if (debug_fite_ids contains L || !(memory contains L)) {
 				f = examine_fite(L);
 				f.fame = s.group_string("(([+-]\\d+).Fame)")[0,2].to_int();
 				f.substats = s.group_string("(([+-]\\d+).Stats)")[0,2].to_int();
 				f.swagger = s.group_string("(\\\+(\\d+).Swagger)")[0,2].to_int();
 				f.flowers = s.group_string("(\\+(\\d).Flower)")[0,2].to_int();
 				memory[L] = f.to_string();
+				if (debug_fite_ids contains L)
+					print(memory[L]);
 			}
 		}
 
