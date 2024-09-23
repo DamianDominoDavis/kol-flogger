@@ -1,14 +1,25 @@
+> "You know, what's this shit, standing around watching the game?<br />
+> Get in there, put a helmet on and hurt somebody for Chrissakes, will you?<br />
+> You're not getting paid to watch!"<br />
+
+<sup>– George Carlin, "Sports", *Playin' with Your Head*, 1986</sup>
+
 # Flogger
+is a relay script for <a href="https://github.com/kolmafia/kolmafia">KoLmafia</a> that aggregates PvP win rate and mini frequency statistics. Run it by selecting Flogger from the drop-down in your relay browser's top menu: Flogger will start copying fights it hasn't seen yet into local storage, and display a summary when it's done. Find out what you're good at, focus on what you're not, and/or enjoy.
 
-"You know, what's this shit, standing around watching the game?<br/>
-Get in there, put a helmet on and hurt somebody for Chrissakes, will you?<br/>
-**You're not getting paid to watch!**"<br/>
-– George Carlin, "Sports", *Playin' with Your Head*, 1986
+Try it out with CLI `git checkout DamianDominoDavis/kol-flogger release`
 
-__***Flogger***__ is a relay script for <a href="https://github.com/kolmafia/kolmafia">KoLmafia</a> which shows PvP win rate and stance frequency statistics. (Afterwards, it's faster; but running this script for the first time can take up to one minute.)
+<img alt="Example" src="https://raw.githubusercontent.com/DamianDominoDavis/kol-flogger/main/example.png" style="max-width: 100%;" />
 
-Try it out: `git checkout DamianDominoDavis/kol-flogger release`<br/>
-Run from the drop-down in the top pane of the relay browser.
+##### FAQ:
+- ***Why isn't anything happening when I pick Flogger from the top menu?***<br />
+It probably is happening. If you haven't run Flogger before, or haven't run it in a while, you might have a whole huggy bunch of pvp fights Flogger hasn't scanned yet. But you can always wander off and do something else: Flogger will always save scan progress, even if interrupted by combat or a choice. Try loading again in a minute.
+
+- ***What is Favor?***<br />
+Favor measures variance from expected mini frequency, normalized to a scale of ±10. Positive favor means a mini is more popular to attack with than average; negative, less. (If you ever see Favor with a magnitude greater than 10, you've found a bug and should drop me a line.) Defensive Favor is a good indicator of which minis are popular.
+
+- ***Will Flogger attack for me?***<br />
+Though it suggests which mini is your best offense, Flogger is not for automating attacks. If you want a smart attack script, you want <a href="https://github.com/Pantocyclus/PVP_MAB">PVP_MAB</a>. (I enjoy the `no_optimize` parameter.)
 
 ##### CLI Settings:
 - `flogger help` — print these messages
@@ -17,8 +28,7 @@ Run from the drop-down in the top pane of the relay browser.
 - `flogger backup` — copy cache to a backup safe from `purge`
 - `flogger recolor` — change colorblind modes
 
-<a href="https://raw.githubusercontent.com/DamianDominoDavis/kol-flogger/main/example.png"><img alt="Example" src="https://raw.githubusercontent.com/DamianDominoDavis/kol-flogger/main/example.png" style="max-width: 100%;" /></a>
-
 ##### Roadmap:
-1. Requested: track loot gained, loot lost 
-2. add name/ID filter box to archive page
+1. show summary of gained/lost loot
+2. move CLI controls to relay form
+3. filter stats by opponent
