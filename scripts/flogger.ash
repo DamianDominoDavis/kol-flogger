@@ -8,7 +8,7 @@ record fite {
 	item prize;
 };
 
-boolean[int] debug_fite_ids = $ints[-1];
+boolean[int] debug_fite_ids = $ints[-1]; // 8675309
 
 string stance_name(string s) {
 	static string[string] cache = {"" : "[ nameless ]"};
