@@ -8,7 +8,7 @@ record fite {
 	item prize;
 };
 
-boolean[int] debug_fite_ids = $ints[-1];// $ints[197411, 197417, 195998, 200190, 202660];
+boolean[int] debug_fite_ids = $ints[-1];
 
 string stance_name(string s) {
 	static string[string] cache = {"" : "[ nameless ]"};
@@ -39,40 +39,28 @@ if (stance_bimap.count() < 1) {
 string win_lose_draw(boolean attacking, boolean attacker_win, boolean defender_win) {
 	if (attacker_win && defender_win)
 		abort("double wins are draws? something is wrong");
-	if ((attacking && attacker_win) || (!attacking && defender_win))
-		return('W');
-	if ((attacking && defender_win) || (!attacking && attacker_win))
-		return('L');
-	if (!attacker_win && !defender_win)
-		return('D');
-	abort ("who won? who\'s next? you decide.");
-	return "X";
+	if (attacker_win || defender_win)
+		return (attacking == attacker_win) ? 'W' : 'L';
+	return 'D';
+}
+
+int tally(fite f, string result) {
+	int n = 0;
+	foreach mini, result in f.rounds
+		if (result == result)
+			n++;
+	return n;
 }
 
 boolean won(fite f) {
-	int w,l,d;
-	foreach mini,result in f.rounds
-		switch(result) {
-			case ("W"): w++; break;
-			case ("L"): l++; break;
-			case ("D"): d++; break;
-			default: abort("what hap");
-		}
-	return f.attacking ? w > l : w >= l;
+	int w = tally(f, "W");
+	if (f.attacking)
+		return w > 3;
+	return w >= tally(f, "L");
 }
 
 boolean flawless(fite f) {
-	if (!f.attacking)
-		return false;
-	int w,l,d;
-	foreach mini,result in f.rounds
-		switch(result) {
-			case ("W"): w++; break;
-			case ("L"): l++; break;
-			case ("D"): d++; break;
-			default: abort("what hap");
-		}
-	return (w == 7);
+	return f.attacking && tally(f, "W") == 7;
 }
 
 // fite constructor, takes uids from pvp log page links
@@ -91,11 +79,11 @@ fite examine_fite(int lid) {
 	stances = buf.xpath("//tr[@class='mini']/td/center");
 	attacker_results = buf.xpath("//tr[@class='mini']/td[1]");
 	defender_results = buf.xpath("//tr[@class='mini']/td[3]");
-	foreach i in stances
-		stances[i] = stances[i].xpath("//b/text()")[0].stance_name();
 	out.attacking = (my_name().to_lower_case() == fighters[0].to_lower_case());
-	foreach i,mini in stances
-		out.rounds[mini] = win_lose_draw(out.attacking, attacker_results[i].contains_text("youwin"), defender_results[i].contains_text("youwin"));
+	foreach i in stances {
+		stances[i] = stances[i].xpath("//b/text()")[0].stance_name();
+		out.rounds[stances[i]] = win_lose_draw(out.attacking, attacker_results[i].contains_text("youwin"), defender_results[i].contains_text("youwin"));
+	}
 	string[int,int] loot_maybe = buf.group_string("<td.+?You acquire an item: (.+)</td>");
 	if (count(loot_maybe) > 0) {
 		string prize = loot_maybe[0,1].group_string("<b>(.+)<font size=1")[0,1].group_string("(.+)</b>")[0,1];
@@ -129,18 +117,19 @@ fite examine_fite(int lid) {
 
 //fite constructor, from fite.to_string()
 fite from_string(string s) {
-	fite out;
-	out.attacking = (s.char_at(0) == 'a');
-	string tring = s.substring(1);
-	string[int,int] groups = tring.group_string('([0-9ABC][WLD])');
-	foreach i in groups
-		out.rounds[stance_bimap[groups[i,0].char_at(0)]] = groups[i,0].char_at(1);
-	string[int] rest = tring.split_string(' ');
-	out.fame = rest[1].to_int();
-	out.substats = rest[2].to_int();
-	out.swagger = rest[3].to_int();
-	out.flowers = rest[4].to_int(); 
-	out.prize = rest[5].to_item();
+	string[int,int] groups = s.group_string('([ad])(\\w{14,}) (-?\\d+) (-?\\d+) (\\d+) (\\d+) (.*)$');
+	fite out = new fite(
+		groups[0,1] == "a",
+		{},
+		to_int(groups[0,3]),
+		to_int(groups[0,4]),
+		to_int(groups[0,5]),
+		to_int(groups[0,6]),
+		to_item(groups[0,7])
+	);
+	foreach x,y,z in groups[0,2].group_string("([0-9A-Z])([WLD])")
+		if (y == 0)
+			out.rounds[stance_bimap[z.char_at(0)]] = z.char_at(1);
 	return out;
 }
 
