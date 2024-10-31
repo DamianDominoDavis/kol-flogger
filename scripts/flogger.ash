@@ -1,10 +1,10 @@
 record fite {
+	int opponent;
 	boolean attacking;
 	string[string] rounds;
 	int fame;
 	int substats;
 	int swagger;
-	int flowers;
 	item prize;
 };
 
@@ -70,6 +70,7 @@ fite examine_fite(int lid) {
 	string[int] stances;
 	string[int] attacker_results;
 	string[int] defender_results;
+	int combatant;
 
 	if (buf.xpath("//div[@class='fight']").count() <= 0) // require expanded mode
 		abort("Turn off compact mode in your vanilla KOL options.");
@@ -79,6 +80,7 @@ fite examine_fite(int lid) {
 	attacker_results = buf.xpath("//tr[@class='mini']/td[1]");
 	defender_results = buf.xpath("//tr[@class='mini']/td[3]");
 	out.attacking = (my_name().to_lower_case() == fighters[0].to_lower_case());
+	out.opponent = (my_name().to_lower_case() == fighters[0].to_lower_case() ? fighters[1] : fighters[0]).get_player_id();
 	foreach i in stances {
 		stances[i] = stances[i].xpath("//b/text()")[0].stance_name();
 		out.rounds[stances[i]] = win_lose_draw(out.attacking, attacker_results[i].contains_text("youwin"), defender_results[i].contains_text("youwin"));
@@ -116,11 +118,11 @@ fite examine_fite(int lid) {
 
 //fite constructor, from fite.to_string()
 fite from_string(string s) {
-	string[int,int] groups = s.group_string('([ad])(\\w{14,}) (-?\\d+) (-?\\d+) (\\d+) (\\d+) (.*)$');
+	string[int,int] groups = s.group_string('(\\d+)([ad])(\\w{14,}) (-?\\d+) (-?\\d+) (\\d+) (.*)$');
 	fite out = new fite(
-		groups[0,1] == "a",
+		groups[0,1].to_int(),
+		groups[0,2] == "a",
 		{},
-		to_int(groups[0,3]),
 		to_int(groups[0,4]),
 		to_int(groups[0,5]),
 		to_int(groups[0,6]),
@@ -133,10 +135,10 @@ fite from_string(string s) {
 }
 
 string to_string(fite f) {
-	string out = (f.attacking? 'a':'d');
+	string out = f.opponent + (f.attacking? 'a':'d');
 	foreach mini,winner in f.rounds
 		out += stance_bimap[mini] + winner;
-	return out + ` {f.fame} {f.substats} {f.swagger} {f.flowers} {f.prize}`;
+	return out + ` {f.fame} {f.substats} {f.swagger} {f.prize}`;
 }
 
 int season_int() {
@@ -221,5 +223,5 @@ void main(string args) {
 	}
 	if ($strings[backup,purge] contains args.to_lower_case() && season_int() == 0)
 		print("It's off-season.", "red");
-	call void args();
 }
+	call void args();
