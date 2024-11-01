@@ -91,40 +91,34 @@ void main() {
 
 	try {
 		fite f;
-		int[int] to_score;
 		foreach i,s in log if (i!=0) {
 			int L = s.group_string('lid=(\\d+)')[0,1].to_int();
-			to_score[to_score.count()] = L;
-			if (debug_fite_ids contains L || !(memory contains L)) {
+			if (!(memory contains L)) {
 				f = examine_fite(L);
 				f.fame = s.group_string("(([+-]\\d+).Fame)")[0,2].to_int();
 				f.substats = s.group_string("(([+-]\\d+).Stats)")[0,2].to_int();
 				f.swagger = s.group_string("(\\\+(\\d+).Swagger)")[0,2].to_int();
-				f.flowers = s.group_string("(\\+(\\d).Flower)")[0,2].to_int();
-				memory[L] = f.to_string();
-				if (debug_fite_ids contains L)
-					print(memory[L]);
+				memory[L] = f.as_string();
 			}
 		}
 
-		int fame,substats,swagger,flowers,winningness;
+		int fame,substats,swagger,winningness;
 		string[string] prefs;
 		file_to_map("flogger." + my_name().to_lower_case() + ".pref", prefs);
 		scanThisMany = prefs["freshness"].to_int();
 		if (scanThisMany < 1)
 			scanThisMany = 1000;
 		int skipThisMany = memory.count() - scanThisMany;
-		foreach L in memory if (skipThisMany-- <= 0) {
-			f = memory[L].from_string();
+		foreach L in memory if ((debug_fite_ids contains L) | (skipThisMany-- <= 0)) {
+			if (debug_fite_ids contains L)
+				examine_fite(L, true);
+			f = memory[L].from_string(debug_fite_ids contains L);
 			cumulative[f.attacking,f.won()]++;
-			if (f.fame != 0) {
-				fame += f.fame;
-				if (f.attacking)
-					winningness += f.won()? 1 : -1;
-			}
+			fame += f.fame;
+			if (f.attacking)
+				winningness += f.won()? 1 : -1;
 			substats += f.substats;
 			swagger += f.swagger;
-			flowers += f.flowers;
 			foreach mini,winner in f.rounds
 				scores[mini, f.attacking, winner=='W']++;
 			if (f.flawless())
@@ -204,7 +198,7 @@ void main() {
 						+ "<p><small>*** Stats above are calculated over your last " + scanThisMany + " fights. Change this number with CLI command <code>flogger history</code>.</small></p>"
 						+ `<p><small>You won {cumulative[true,true]} / {cumulative[true,true]+cumulative[true,false]} attacks ({cumulative[true,true].out_of(cumulative[true,false]).to_string('%.1f%%')}) `
 						+ `and {cumulative[false,true]} / {cumulative[false,true]+cumulative[false,false]} defends ({cumulative[false,true].out_of(cumulative[false,false]).to_string('%.1f%%')}).</br>`
-						+ `Net: {fame.to_string('%+d')} fame, {swagger} swagger ({perfect} from flawless victory), {flowers} flowers, {winningness.to_string('%+d')} winningness, and {substats} substats.</small></p>`;
+						+ `Net: {fame.to_string('%+d')} fame, {swagger} swagger ({perfect} from flawless victory), {winningness.to_string('%+d')} winningness, and {substats} substats.</small></p>`;
 		outro.append_child("<p>(.+)</p>", footnote).write();
 	}
 }

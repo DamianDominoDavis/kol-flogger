@@ -8,7 +8,7 @@ record fite {
 	item prize;
 };
 
-boolean[int] debug_fite_ids = $ints[-1]; // 8675309
+boolean[int] debug_fite_ids = $ints[1403328];
 
 string stance_name(string s) {
 	static string[string] cache = {"" : "[ nameless ]"};
@@ -36,6 +36,14 @@ if (stance_bimap.count() < 1) {
 	}
 }
 
+// minified fitestring
+string as_string(fite f) {
+	string out = f.opponent + (f.attacking? 'a':'d') + ' ';
+	foreach mini,winner in f.rounds
+		out += stance_bimap[mini] + winner;
+	return out + ` {f.fame} {f.substats} {f.swagger} {f.prize}`;
+}
+
 string win_lose_draw(boolean attacking, boolean attacker_win, boolean defender_win) {
 	if (attacker_win && defender_win)
 		abort("double wins are draws? something is wrong");
@@ -45,6 +53,8 @@ string win_lose_draw(boolean attacking, boolean attacker_win, boolean defender_w
 }
 
 int tally(fite f, string r) {
+	if (f.rounds.count() < 7)
+		abort(`error tallying fite {f.as_string()}`);
 	int n = 0;
 	foreach mini, result in f.rounds
 		if (result == r)
@@ -63,14 +73,13 @@ boolean flawless(fite f) {
 }
 
 // fite constructor, takes uids from pvp log page links
-fite examine_fite(int lid) {
+fite examine_fite(int lid, boolean debug) {
 	fite out;
 	buffer buf = visit_url("peevpee.php?action=log&ff=1&lid="+lid+"&place=logs&pwd", false);
 	string[int] fighters;
 	string[int] stances;
 	string[int] attacker_results;
 	string[int] defender_results;
-	int combatant;
 
 	if (buf.xpath("//div[@class='fight']").count() <= 0) // require expanded mode
 		abort("Turn off compact mode in your vanilla KOL options.");
@@ -80,7 +89,7 @@ fite examine_fite(int lid) {
 	attacker_results = buf.xpath("//tr[@class='mini']/td[1]");
 	defender_results = buf.xpath("//tr[@class='mini']/td[3]");
 	out.attacking = (my_name().to_lower_case() == fighters[0].to_lower_case());
-	out.opponent = (my_name().to_lower_case() == fighters[0].to_lower_case() ? fighters[1] : fighters[0]).get_player_id();
+	out.opponent = (out.attacking ? fighters[1] : fighters[0]).get_player_id().to_int();
 	foreach i in stances {
 		stances[i] = stances[i].xpath("//b/text()")[0].stance_name();
 		out.rounds[stances[i]] = win_lose_draw(out.attacking, attacker_results[i].contains_text("youwin"), defender_results[i].contains_text("youwin"));
@@ -90,9 +99,11 @@ fite examine_fite(int lid) {
 		string prize = loot_maybe[0,1].group_string("<b>(.+)<font size=1")[0,1].group_string("(.+)</b>")[0,1];
 		out.prize = to_item(prize);
 	}
-	if (debug_fite_ids contains lid) {
-		string attacker = out.attacking ? fighters[0] : fighters[1];
-		string defender = out.attacking ? fighters[1] : fighters[0];
+	if (debug) {
+		print(stances.count()+" stances captured");
+		print(out.rounds.count()+" rounds recorded");
+		string attacker = fighters[0];
+		string defender = fighters[1];
 		print(`{attacker} attacks {defender}!`);
 		foreach i,s in stances {
 			if (!(stance_bimap contains s) && length(s) > 0) {
@@ -112,13 +123,18 @@ fite examine_fite(int lid) {
 				print(`[{stance_bimap[s]}]: {defender} beat {attacker} at {s}`);
 		}
 		print("WINNER: " + (out.won() ? attacker : defender));
+		if (out.prize != $item[none])
+			print("Looted a " + out.prize);
 	}
 	return out;
 }
+fite examine_fite(int lid) {
+	return examine_fite(lid, false);
+}
 
 //fite constructor, from fite.to_string()
-fite from_string(string s) {
-	string[int,int] groups = s.group_string('(\\d+)([ad])(\\w{14,}) (-?\\d+) (-?\\d+) (\\d+) (.*)$');
+fite from_string(string s, boolean debug) {
+	string[int,int] groups = s.group_string('^(\\d+)([ad]) (\\w{14,}) (-?\\d+) (-?\\d+) (\\d+) (.*)$');
 	fite out = new fite(
 		groups[0,1].to_int(),
 		groups[0,2] == "a",
@@ -128,17 +144,16 @@ fite from_string(string s) {
 		to_int(groups[0,6]),
 		to_item(groups[0,7])
 	);
-	foreach x,y,z in groups[0,2].group_string("([0-9A-Z])([WLD])")
+	if (debug)
+		foreach x,y,s in groups
+			print(`{x},{y}: {s}`);
+	foreach x,y,z in groups[0,3].group_string("([0-9A-Z])([WLD])")
 		if (y == 0)
 			out.rounds[stance_bimap[z.char_at(0)]] = z.char_at(1);
 	return out;
 }
-
-string to_string(fite f) {
-	string out = f.opponent + (f.attacking? 'a':'d');
-	foreach mini,winner in f.rounds
-		out += stance_bimap[mini] + winner;
-	return out + ` {f.fame} {f.substats} {f.swagger} {f.prize}`;
+fite from_string(string s) {
+	return from_string(s, false);
 }
 
 int season_int() {
@@ -219,9 +234,9 @@ void main(string args) {
 	if (!(flags contains args.to_lower_case())) {
 		print('flogger what?', 'red');
 		help();
-		return;
 	}
-	if ($strings[backup,purge] contains args.to_lower_case() && season_int() == 0)
+	else if ($strings[backup,purge] contains args.to_lower_case() && season_int() == 0)
 		print("It's off-season.", "red");
+	else
+		call void args();
 }
-	call void args();
