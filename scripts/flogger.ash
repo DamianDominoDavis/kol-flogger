@@ -13,14 +13,14 @@ boolean[int] debug_fite_ids = $ints[1403328];
 string stance_name(string s) {
 	static string[string] cache = {"" : "[ nameless ]"};
 	if (!(cache contains s)) {
-		string stripped = (s.length() > 1 && s.char_at(s.length()-1) =='*') ? s.substring(0, s.length()-1) : s;
+		string stripped = (s.length() > 1 && s.char_at(s.length()-1) == "*") ? s.substring(0, s.length()-1) : s;
 		if (!($strings[Purrrity,Thirrrsty forrr Booze] contains stripped))
-			stripped = stripped.replace_string('Rrr','R').replace_string('rrr','r');
+			stripped = stripped.replace_string("Rrr","R").replace_string("rrr","r");
 		if ($strings[Visiting The Co@^&amp;$`~] contains stripped)
 			stripped = stripped.entity_decode();
-		stripped = stripped.replace_string('†','').replace_string('&#8224;','').replace_string('&dagger;','');
-		stripped = stripped.replace_string('‡','').replace_string('&#8225;','').replace_string('&Dagger;','');
-		stripped = stripped.replace_string('&apos;',"'").replace_string('&#39;',"'");
+		stripped = stripped.replace_string("†","").replace_string("&#8224;","").replace_string("&dagger;","");
+		stripped = stripped.replace_string("‡","").replace_string("&#8225;","").replace_string("&Dagger;","");
+		stripped = stripped.replace_string("&apos;","'").replace_string("&#39;","'");
 		cache[s] = stripped;
 	}
 	return cache[s];
@@ -29,8 +29,8 @@ string stance_name(string s) {
 // minified stance "enum"
 static string[string] stance_bimap;
 if (stance_bimap.count() < 1) {
-	buffer info = visit_url('peevpee.php?place=rules', false);
-	foreach k,s in info.xpath('//table//table//table//tr/td[1]/b/text()') {
+	buffer info = visit_url("peevpee.php?place=rules", false);
+	foreach k,s in info.xpath("//table//table//table//tr/td[1]/b/text()") {
 		stance_bimap[k.to_string("%X")] = stance_name(s);
 		stance_bimap[stance_name(s)] = k.to_string("%X");
 	}
@@ -38,7 +38,7 @@ if (stance_bimap.count() < 1) {
 
 // minified fitestring
 string as_string(fite f) {
-	string out = f.opponent + (f.attacking? 'a':'d') + ' ';
+	string out = f.opponent + (f.attacking? "a":"d") + " ";
 	foreach mini,winner in f.rounds
 		out += stance_bimap[mini] + winner;
 	return out + ` {f.fame} {f.substats} {f.swagger} {f.prize}`;
@@ -48,8 +48,8 @@ string win_lose_draw(boolean attacking, boolean attacker_win, boolean defender_w
 	if (attacker_win && defender_win)
 		abort("double wins are draws? something is wrong");
 	if (attacker_win || defender_win)
-		return (attacking == attacker_win) ? 'W' : 'L';
-	return 'D';
+		return (attacking == attacker_win) ? "W" : "L";
+	return "D";
 }
 
 int tally(fite f, string r) {
@@ -63,33 +63,31 @@ int tally(fite f, string r) {
 }
 
 boolean won(fite f) {
-	int w = tally(f, "W");
-	int l = tally(f, "L");
-	return (f.attacking)? w > l : w >= l;
+	int w = f.tally("W");
+	int l = f.tally("L");
+	return w > l + to_int(f.attacking);
 }
 
 boolean flawless(fite f) {
-	return f.attacking && tally(f, "W") == 7;
+	return f.attacking && f.tally("W") == 7;
 }
 
 // fite constructor, takes uids from pvp log page links
 fite examine_fite(int lid, boolean debug) {
 	fite out;
 	buffer buf = visit_url("peevpee.php?action=log&ff=1&lid="+lid+"&place=logs&pwd", false);
-	string[int] fighters;
-	string[int] stances;
-	string[int] attacker_results;
-	string[int] defender_results;
+	string[int] playerids, fighters, stances, attacker_results, defender_results;
 
 	if (buf.xpath("//div[@class='fight']").count() <= 0) // require expanded mode
 		abort("Turn off compact mode in your vanilla KOL options.");
-
+	playerids = buf.xpath("//div[@class='fight']/a/@href");
 	fighters = buf.xpath("//div[@class='fight']/a/text()");
 	stances = buf.xpath("//tr[@class='mini']/td/center");
 	attacker_results = buf.xpath("//tr[@class='mini']/td[1]");
 	defender_results = buf.xpath("//tr[@class='mini']/td[3]");
 	out.attacking = (my_name().to_lower_case() == fighters[0].to_lower_case());
-	out.opponent = (out.attacking ? fighters[1] : fighters[0]).get_player_id().to_int();
+
+	out.opponent = (out.attacking ? playerids[1] : playerids[0]).split_string("=")[1].to_int();
 	foreach i in stances {
 		stances[i] = stances[i].xpath("//b/text()")[0].stance_name();
 		out.rounds[stances[i]] = win_lose_draw(out.attacking, attacker_results[i].contains_text("youwin"), defender_results[i].contains_text("youwin"));
@@ -99,6 +97,7 @@ fite examine_fite(int lid, boolean debug) {
 		string prize = loot_maybe[0,1].group_string("<b>(.+)<font size=1")[0,1].group_string("(.+)</b>")[0,1];
 		out.prize = to_item(prize);
 	}
+
 	if (debug) {
 		print(stances.count()+" stances captured");
 		print(out.rounds.count()+" rounds recorded");
@@ -115,7 +114,7 @@ fite examine_fite(int lid, boolean debug) {
 				}
 				print(b, "red");
 			}
-			if (out.rounds[s] == 'D')
+			if (out.rounds[s] == "D")
 				print(`[{stance_bimap[s]}]: draw!`);
 			else if (attacker_results[i].contains_text("youwin"))
 				print(`[{stance_bimap[s]}]: {attacker} beat {defender} at {s}`);
@@ -126,6 +125,7 @@ fite examine_fite(int lid, boolean debug) {
 		if (out.prize != $item[none])
 			print("Looted a " + out.prize);
 	}
+
 	return out;
 }
 fite examine_fite(int lid) {
@@ -134,15 +134,15 @@ fite examine_fite(int lid) {
 
 //fite constructor, from fite.to_string()
 fite from_string(string s, boolean debug) {
-	string[int,int] groups = s.group_string('^(\\d+)([ad]) (\\w{14,}) (-?\\d+) (-?\\d+) (\\d+) (.*)$');
+	string[int,int] groups = s.group_string("^(\\d+)([ad]) (\\w{14,}) (-?\\d+) (-?\\d+) (\\d+) (.*)$");
 	fite out = new fite(
-		groups[0,1].to_int(),
-		groups[0,2] == "a",
-		{},
-		to_int(groups[0,4]),
-		to_int(groups[0,5]),
-		to_int(groups[0,6]),
-		to_item(groups[0,7])
+		groups[0,1].to_int(),	// opponent id
+		groups[0,2] == "a",		// attacking?
+		{},						// rounds
+		to_int(groups[0,4]),	// fame
+		to_int(groups[0,5]),	// stats
+		to_int(groups[0,6]),	// swagger
+		to_item(groups[0,7])	// [prize]
 	);
 	if (debug)
 		foreach x,y,s in groups
@@ -200,7 +200,7 @@ void help() {
 }
 
 void history() {
-	cli_execute('flogger_freshness');
+	cli_execute("flogger_freshness");
 }
 
 void purge() {
@@ -232,7 +232,7 @@ void recolor() {
 
 void main(string args) {
 	if (!(flags contains args.to_lower_case())) {
-		print('flogger what?', 'red');
+		print("flogger what?", "red");
 		help();
 	}
 	else if ($strings[backup,purge] contains args.to_lower_case() && season_int() == 0)
