@@ -236,7 +236,7 @@ void main() {
 		// bottom line
 		float fights = cumulative[true,true] + cumulative[true,false];
 		string outro = `</tr></table><center>`
-			+ `<p><small>Average Fight: {(fame/fights).to_string('%+.1f')} fame, {(swagger/fights).to_string("%.1f")} swagger (including a {(perfect * 100 / fights).to_string("%.1f")}% chance of flawless victory)</small><br />`
+			+ `<p><small>Average Attack: {(fame/fights).to_string('%+.1f')} fame, {(swagger/fights).to_string("%.1f")} swagger (including a {(perfect * 100 / fights).to_string("%.1f")}% chance of flawless victory)</small><br />`
 			+ `<small>Average Win: {(fame.to_float()/cumulative[true,true]).to_string('%+.1f')} fame, {(swagger.to_float()/cumulative[true,true]).to_string("%.1f")} swagger (including a {(perfect * 100.0 / cumulative[true,true]).to_string("%.1f")}% chance of flawless victory)</small><br />`
 			+ `<span><small>Net: {fame.to_string('%+d')} fame, {swagger} swagger ({perfect} from flawless victory), {winningness.to_string('%+d')} winningness, and {substats} substats</small></p>`;
 
