@@ -3,36 +3,17 @@
 // which kung fu is best
 import <flogger.ash>
 
-// Xth value along
-// gradient between two hues
-// in the middle, grey
+// gradient from A to gray to B
 string colorize(int x) {
-	string[string] fmem;
-	string file = "flogger." + my_name().to_lower_case() + ".pref";
-	file_to_map(file, fmem);
-	if (fmem["colors"] == "nored")
-		return `rgb({50-(x>50?x-50:50-x)}%, {x}%, {100-x}%)`;
-	if (fmem["colors"] == "nogreen")
-		return `rgb({100-x}%, {50-(x>50?x-50:50-x)}%, {x}%)`;
-	return `rgb({100-x}%, {x}%, {50-(x>50?x-50:50-x)}%)`;
+	switch (get_pref("colors")) {
+		case "nored": return `rgb({50-(x>50?x-50:50-x)}%, {x}%, {100-x}%)`;
+		case "nogreen": return `rgb({100-x}%, {50-(x>50?x-50:50-x)}%, {x}%)`;
+		case "noblue": return `rgb({100-x}%, {x}%, {50-(x>50?x-50:50-x)}%)`;
+		default: return `rgb({x}%, {x}%, {x}%)`;
+	}
 }
 
-// python idiom
-// stringify the list of things
-// with separators
-string join(string sep, item[int] arr) {
-	if (arr.count() < 1)
-		return '';
-	string o;
-	foreach _,it in arr
-		if (it.to_string().length() > 0)
-			o += sep + it.to_string();
-	return o.substring(sep.length());
-}
-
-// knockoff jquery!
-// have you ever seen something
-// as degenerate
+// append text to the first capture of some regex, must capture
 string append_child(string original, string tag_patten, string content) {
 	matcher tag_matcher = tag_patten.create_matcher(original);
 	if (tag_matcher.find())
@@ -41,10 +22,12 @@ string append_child(string original, string tag_patten, string content) {
 	return "";
 }
 
+// fractions
 float out_of(float a,float b) {
 	return (a+b==0)? 0 : (100.0 * a) / (a + b);
 }
 
+// counting the days
 int dateDifference(string d1, string d2) {
 	static int[int] daysUpToMonth = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 };
 	static int[int] daysUpToMonthLeapYear = { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335 };
@@ -66,19 +49,25 @@ int dateDifference(string d1, string d2) {
 }
 
 void main() {
-	// override the rules
-	// only when it's seasonal
-	// and we've been fightingrule
 	string page = visit_url("peevpee.php?place=rules").to_string();
 	string[int] log = visit_url("peevpee.php?place=logs&mevs=0&oldseason=0&showmore=1", false).xpath('//table//table//table//table//tr');
+	int[string,boolean,boolean] scores;
+	int[boolean,boolean] cumulative;
+	int perfect;
+	int freshness;
+	int gonna;
+	int got;
+	string colors;
+	string[int] memory;
+	file_to_map(cache_file, memory);
+
+	// return the unmodified info booth if we have no stats to display
 	if (season_int() == 0 || log.count() < 2) {
 		page.write();
 		return;
 	}
 
-	// enough is enough
-	// compact mode can stay broken
-	// til I feel like it
+	// require expanded fights
 	int test_lid = log[1].group_string('lid=(\\d+)')[0,1].to_int();
 	buffer test_fight = visit_url("peevpee.php?action=log&ff=1&lid="+test_lid+"&place=logs&pwd", false);
 	if (test_fight.xpath("//div[@class='fight']").count() == 0) {
@@ -89,13 +78,7 @@ void main() {
 		return;
 	}
 
-	// load from memory
-	// tally up wins and losses
-	// save to file sometimes
-	int gonna, got;
-	string file = "flogger." + season_int() + "." + my_name().to_lower_case() + ".txt";
-	string[int] memory;
-	file_to_map(file, memory);
+	// emit new fights count
 	foreach i,s in log if (i!=0) {
 		int L = s.group_string('lid=(\\d+)')[0,1].to_int();
 		if (!(memory contains L))
@@ -104,12 +87,8 @@ void main() {
 	if (gonna > 0)
 		print('flogger caching '+gonna+' new recent fites...');
 
-	int[string,boolean,boolean] scores;
-	int[boolean,boolean] cumulative;
-	int scanThisMany = 1000;
-	int perfect;
-
 	try {
+		// cache new fights
 		fite f;
 		foreach i,s in log if (i!=0) {
 			int L = s.group_string('lid=(\\d+)')[0,1].to_int();
@@ -119,42 +98,56 @@ void main() {
 				f.substats = s.group_string("(([+-]\\d+).Stats)")[0,2].to_int();
 				f.swagger = s.group_string("(\\\+(\\d+).Swagger)")[0,2].to_int();
 				memory[L] = f.as_string();
+				if (++got % 10 == 0)
+					map_to_file(memory, cache_file);
 			}
 		}
 
-		int fame,substats,swagger,winningness;
-		string[string] prefs;
-		file_to_map("flogger." + my_name().to_lower_case() + ".pref", prefs);
-		scanThisMany = prefs["freshness"].to_int();
-		if (scanThisMany < 1)
-			scanThisMany = 1000;
-		int skipThisMany = memory.count() - scanThisMany;
-		foreach L in memory if ((debug_fite_ids contains L) | (skipThisMany-- <= 0)) {
+		// check prefs
+		freshness = to_int((form_fields() contains "freshness"? form_fields() : all_prefs())["freshness"]);
+		if (freshness < 1)
+			freshness = 1000;
+		set_pref("freshness", to_string(freshness));
+		colors = form_fields() contains "colors"? form_fields()["colors"] : get_pref("colors");
+		if (colors == "")
+			colors = "nogreen";
+		set_pref("colors", colors);
+
+		// aggregate scores, emit debug fights
+		int fame;
+		int substats;
+		int swagger;
+		int winningness;
+		int skipThisMany = memory.count() - freshness;
+		foreach L in memory if (debug_fite_ids contains L || skipThisMany-- <= 0) {
 			if (debug_fite_ids contains L)
 				examine_fite(L, true);
 			f = memory[L].from_string(debug_fite_ids contains L);
 			cumulative[f.attacking,f.won()]++;
 			fame += f.fame;
-			if (f.attacking)
-				winningness += f.won()? 1 : -1;
+			winningness += to_int(f.attacking) * (f.won() ? 1 : -1);
 			substats += f.substats;
 			swagger += f.swagger;
+			perfect += to_int(f.flawless());
 			foreach mini,winner in f.rounds
 				scores[mini, f.attacking, winner=='W']++;
-			if (f.flawless())
-				perfect++;
-			if (gonna > 0 && ++got % 50 == 0)
-				map_to_file(memory, file);
 		}
+		if (got > 0)
+			print('flogger done');
 	}
 
-	// save it all to file
-	// render extra table cells
-	// see what you have wrought
 	finally {
-		map_to_file(memory, file);
-		if (gonna > 0)
-			print('flogger done');
+		map_to_file(memory, cache_file);
+		int total_attacks;
+		int total_defends;
+		foreach mini,attacking,win in scores {
+			if (attacking)
+				total_attacks += scores[mini,attacking,win];
+			else
+				total_defends += scores[mini,attacking,win];
+		}
+
+		// page top
 		page = page.append_child("<head>(.+)</head>",
 			"<style>"+
 			"table table table tr td { white-space: normal; vertical-align: middle!important; padding: 0.5px 2px; } "+
@@ -163,9 +156,9 @@ void main() {
 			"table table table td span { display:block; width:8em; border: 1px solid black; padding: 2px 0; font-weight: bold; color: white; text-shadow: 0px 0px 5px black;}"+
 			"</style>"
 		);
-
 		string[int] bookends = {"<p><b>Current Season: </b>"+season_int()+"<br />", "<p><b>Active Mini Competitions:"};
 		string header = page.split_string(bookends[0])[0];
+		header = header.replace_string("Information Booth", "Flogger");
 		header.write();
 		string intro = page.xpath("//table//table//p[2]")[0];
 		string[int,int] dates = intro.group_string("\\d{4}-\\d*-\\d*");
@@ -178,19 +171,12 @@ void main() {
 		intro = get_property("currentPVPSeason");
 		intro = intro.char_at(0).to_upper_case() + intro.substring(1);
 		intro = `<center><p>Season {season_int()}: <b>{intro} Season</b>! `
-			+ `Leaderboards freeze in <b>{til_freeze}</b> days. `
+			+ (til_freeze > 0 ? `Leaderboards freeze in <b>{til_freeze}</b> days. ` : "")
 			+ `Season ends in <b>{til_end}</b> days. `
 			+ `<b>Happy hunting!</b><br /></p></center><p><table>`;
 		intro.write();
 
-		int total_attacks;
-		int total_defends;
-		foreach mini,attacking,win in scores {
-			if (attacking)
-				total_attacks += scores[mini,attacking,win];
-			else
-				total_defends += scores[mini,attacking,win];
-		}
+		// table rows
 		foreach i,tr in page.xpath("//table//table//table//tr") {
 			if (i == 0)
 				tr = tr.append_child("<tr>(.+)</tr>", "<th>Attacking</th><th>Defending</th>");
@@ -212,10 +198,10 @@ void main() {
 					def_loss = scores[mini,false,false];
 					loss_rate = out_of(def_wins, def_loss);
 				}
+				//float rate_atk = (100) * (to_float(atk_wins + atk_loss) * 7.0 / total_attacks);
+				//normalized to ±10
 				float favor_atk = (total_attacks <1) ? 0 : (100 * 10 / 6.0) * (to_float(atk_wins + atk_loss) / total_attacks - 1.0 / 12);
 				float favor_def = (total_defends <1) ? 0 : (100 * 10 / 6.0) * (to_float(def_wins + def_loss) / total_defends - 1.0 / 12);
-				//float rate_atk = (100) * (to_float(atk_wins + atk_loss) * 7.0 / total_attacks);
-				//float rate_def = (100) * (to_float(def_wins + def_loss) * 7.0 / total_defends);
 				tr = tr.append_child('<tr class="small">\(.+\)</tr>',
 					`<td align="center" style="white-space: nowrap;">`+
 						`<small><strong>{total_attacks>0 ? favor_atk.to_string("%+.0f") : '0'} favor ({atk_wins}:{atk_loss})</strong></small>`+
@@ -228,11 +214,30 @@ void main() {
 			}
 			tr.write();
 		}
+		float[int] overall = {
+			out_of(cumulative[true,true], cumulative[true,false]),
+			out_of(cumulative[false,true], cumulative[false,false])
+		};
+		write(`<tr class="small"><td colspan="" align="center" valign="top" nowrap="nowrap"><p><b><big><big>Overall</big></big></b></td><td></td><td></td><td></td>`
+				+ `<td align="center" style="white-space: nowrap;"><big><strong>{cumulative[true,true]}:{cumulative[true,false]}</strong></big><span style="background-color:{colorize(overall[0])};"}><big>{overall[0].to_string("%.1f")}%</big></span></td>`
+				+ `<td align="center" style="white-space: nowrap;"><big><strong>{cumulative[false,true]}:{cumulative[false,false]}</strong></big><span style="background-color:{colorize(overall[1])};"}><big>{overall[1].to_string("%.1f")}%</big></span></td>`
+			+ `</tr>`
+		);
 
-		string outro = `</tr></table><p><small>You won {cumulative[true,true]} / {cumulative[true,true]+cumulative[true,false]} attacks ({cumulative[true,true].out_of(cumulative[true,false]).to_string('%.1f%%')}) `
-			+ `and {cumulative[false,true]} / {cumulative[false,true]+cumulative[false,false]} defends ({cumulative[false,true].out_of(cumulative[false,false]).to_string('%.1f%%')}).</br>`
-			+ `Net: {fame.to_string('%+d')} fame, {swagger} swagger ({perfect} from flawless victory), {winningness.to_string('%+d')} winningness, and {substats} substats.</small></p>`
-			+ `<center><a href="peevpee.php?place=logs&mevs=0&oldseason=0&showmore=1">Archives</a> &mdash; <a href="peevpee.php">Back to The Colosseum</a></center></td></tr></table></td></tr></table></center></body></html>`;
+		// page bottom
+		string make_option(string value, string label) {
+			return '<option value="' + value + '"' + (colors == value ? 'selected="true"' : '') + '>' + label + '</option>';
+		}
+		string outro = `</tr></table><center><p><small>Net: {fame.to_string('%+d')} fame, {swagger} swagger ({perfect} from flawless victory), {winningness.to_string('%+d')} winningness, and {substats} substats</small></p>`
+			+ `<form>Score <input type="text" id="freshness" name="freshness" value="{freshness}" size="5" maxlength="4" /> <label for="freshness"> latest fights.</label><br />`
+			+ `Show <select name="colors" id="colors">`
+				+ make_option("noblue", "green/red")
+				+ make_option("nored", "green/blue")
+				+ make_option("nogreen", "blue/red")
+			+ `</select> <label for="colors">colors.</label><br />`
+			+ `<button type="submit">Reload</button></form>`
+			+ `<p><a href="peevpee.php?place=logs&mevs=0&oldseason=0&showmore=1">Archives</a> &mdash; <a href="peevpee.php">Back to The Colosseum</a><br /></p></center>`
+			+ "</td></tr></table></td></tr></table></center></body></html>";
 		outro.write();
 	}
 }

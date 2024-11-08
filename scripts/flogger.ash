@@ -8,8 +8,23 @@ record fite {
 	item prize;
 };
 
-boolean[int] debug_fite_ids = $ints[1403328];
+int season_int() {
+	static int season = 0;
+	static {
+		string page = visit_url("peevpee.php?place=rules", false).to_string();
+		string season_str = page.xpath("//table//table//p[1]/text()")[0];
+		matcher m = create_matcher("\(\\d+\)", season_str);
+		if (m.find())
+			season = m.group(1).to_int();
+	}
+	return season;
+}
 
+static string cache_file = "flogger." + season_int() + "." + my_name().to_lower_case() + ".txt";
+static string prefs_file = "flogger." + my_name().to_lower_case() + ".pref";
+boolean[int] debug_fite_ids = $ints[-1];
+
+// process mini names as they appear on the info booth page
 string stance_name(string s) {
 	static string[string] cache = {"" : "[ nameless ]"};
 	if (!(cache contains s)) {
@@ -26,17 +41,17 @@ string stance_name(string s) {
 	return cache[s];
 }
 
-// minified stance "enum"
+// stance/hex conversion
 static string[string] stance_bimap;
 if (stance_bimap.count() < 1) {
-	buffer info = visit_url("peevpee.php?place=rules", false);
+	string info = visit_url("peevpee.php?place=rules", false);
 	foreach k,s in info.xpath("//table//table//table//tr/td[1]/b/text()") {
 		stance_bimap[k.to_string("%X")] = stance_name(s);
 		stance_bimap[stance_name(s)] = k.to_string("%X");
 	}
 }
 
-// minified fitestring
+// compressed fite string
 string as_string(fite f) {
 	string out = f.opponent + (f.attacking? "a":"d") + " ";
 	foreach mini,winner in f.rounds
@@ -44,6 +59,7 @@ string as_string(fite f) {
 	return out + ` {f.fame} {f.substats} {f.swagger} {f.prize}`;
 }
 
+// mini scoring
 string win_lose_draw(boolean attacking, boolean attacker_win, boolean defender_win) {
 	if (attacker_win && defender_win)
 		abort("double wins are draws? something is wrong");
@@ -52,9 +68,8 @@ string win_lose_draw(boolean attacking, boolean attacker_win, boolean defender_w
 	return "D";
 }
 
+// number of minis won/lost/drawn
 int tally(fite f, string r) {
-	if (f.rounds.count() < 7)
-		abort(`error tallying fite {f.as_string()}`);
 	int n = 0;
 	foreach mini, result in f.rounds
 		if (result == r)
@@ -62,49 +77,43 @@ int tally(fite f, string r) {
 	return n;
 }
 
+// are you winning, son?
 boolean won(fite f) {
 	int w = f.tally("W");
 	int l = f.tally("L");
 	return w > l + to_int(f.attacking);
 }
 
+// extra swagger?
 boolean flawless(fite f) {
 	return f.attacking && f.tally("W") == 7;
 }
 
-// fite constructor, takes uids from pvp log page links
+// fite constructor from pvp archive links, optional debug param
 fite examine_fite(int lid, boolean debug) {
+	string combat = visit_url("peevpee.php?action=log&ff=1&lid="+lid+"&place=logs&pwd", false);
+	string[int] playerids = combat.xpath("//div[@class='fight']/a/@href");
+	string[int] fighters = combat.xpath("//div[@class='fight']/a/text()");
+	string[int] minis = combat.xpath("//tr[@class='mini']/td/center");
+	string[int] attacker_results = combat.xpath("//tr[@class='mini']/td[1]");
+	string[int] defender_results = combat.xpath("//tr[@class='mini']/td[3]");
+	string[int,int] loot_maybe = combat.group_string("<td.+?You acquire an item: (.+)</td>");
 	fite out;
-	buffer buf = visit_url("peevpee.php?action=log&ff=1&lid="+lid+"&place=logs&pwd", false);
-	string[int] playerids, fighters, stances, attacker_results, defender_results;
-
-	if (buf.xpath("//div[@class='fight']").count() <= 0) // require expanded mode
-		abort("Turn off compact mode in your vanilla KOL options.");
-	playerids = buf.xpath("//div[@class='fight']/a/@href");
-	fighters = buf.xpath("//div[@class='fight']/a/text()");
-	stances = buf.xpath("//tr[@class='mini']/td/center");
-	attacker_results = buf.xpath("//tr[@class='mini']/td[1]");
-	defender_results = buf.xpath("//tr[@class='mini']/td[3]");
 	out.attacking = (my_name().to_lower_case() == fighters[0].to_lower_case());
-
 	out.opponent = (out.attacking ? playerids[1] : playerids[0]).split_string("=")[1].to_int();
-	foreach i in stances {
-		stances[i] = stances[i].xpath("//b/text()")[0].stance_name();
-		out.rounds[stances[i]] = win_lose_draw(out.attacking, attacker_results[i].contains_text("youwin"), defender_results[i].contains_text("youwin"));
+	foreach i in minis {
+		minis[i] = stance_name(minis[i].xpath("//b/text()")[0]);
+		out.rounds[minis[i]] = win_lose_draw(out.attacking, attacker_results[i].contains_text("youwin"), defender_results[i].contains_text("youwin"));
 	}
-	string[int,int] loot_maybe = buf.group_string("<td.+?You acquire an item: (.+)</td>");
 	if (count(loot_maybe) > 0) {
 		string prize = loot_maybe[0,1].group_string("<b>(.+)<font size=1")[0,1].group_string("(.+)</b>")[0,1];
 		out.prize = to_item(prize);
 	}
-
 	if (debug) {
-		print(stances.count()+" stances captured");
-		print(out.rounds.count()+" rounds recorded");
 		string attacker = fighters[0];
 		string defender = fighters[1];
 		print(`{attacker} attacks {defender}!`);
-		foreach i,s in stances {
+		foreach i,s in minis {
 			if (!(stance_bimap contains s) && length(s) > 0) {
 				buffer b = "unknown stance: [";
 				for i from 0 to (length(s) - 1) {
@@ -125,14 +134,13 @@ fite examine_fite(int lid, boolean debug) {
 		if (out.prize != $item[none])
 			print("Looted a " + out.prize);
 	}
-
 	return out;
 }
 fite examine_fite(int lid) {
 	return examine_fite(lid, false);
 }
 
-//fite constructor, from fite.to_string()
+//fite constructor, from fite.as_string(), optional debug param
 fite from_string(string s, boolean debug) {
 	string[int,int] groups = s.group_string("^(\\d+)([ad]) (\\w{14,}) (-?\\d+) (-?\\d+) (\\d+) (.*)$");
 	fite out = new fite(
@@ -142,7 +150,7 @@ fite from_string(string s, boolean debug) {
 		to_int(groups[0,4]),	// fame
 		to_int(groups[0,5]),	// stats
 		to_int(groups[0,6]),	// swagger
-		to_item(groups[0,7])	// [prize]
+		to_item(groups[0,7])	// prize
 	);
 	if (debug)
 		foreach x,y,s in groups
@@ -156,26 +164,24 @@ fite from_string(string s) {
 	return from_string(s, false);
 }
 
-int season_int() {
-	static int season = 0;
-	static {
-		string page = visit_url("peevpee.php?place=rules", false).to_string();
-		string season_str = page.xpath("//table//table//p[1]/text()")[0];
-		matcher m = create_matcher("\(\\d+\)", season_str);
-		if (m.find())
-			season = m.group(1).to_int();
-	}
-	return season;
+string[string] all_prefs() {
+	string[string] memory;
+	file_to_map(prefs_file, memory);
+	return memory;
 }
 
-string[string] flags = {
-	"backup"	: "copy cache to a backup",
-	"help"		: "print these messages",
-	"history"	: "adjust how many recent fights to calculate",
-	"purge"		: "empty the cache",
-	"recolor"	: "change colorblind modes"
-};
+string get_pref(string key) {
+	string[string] memory = all_prefs();
+	return (memory contains key) ? memory[key] : "";
+}
 
+boolean set_pref(string key, string value) {
+	string[string] memory = all_prefs();
+	memory[key] = value;
+	return map_to_file(memory, prefs_file);
+}
+
+// copy cache
 void backup() {
 	string file = "flogger." + season_int() + "." + my_name().to_lower_case();
 	string[int] memory, backup;
@@ -194,46 +200,24 @@ void backup() {
 		abort("failed to save file" + file + ".bak");
 }
 
-void help() {
-	foreach f in flags
-		print("flogger " + f + " -- " + flags[f]);
-}
-
-void history() {
-	cli_execute("flogger_freshness");
-}
-
+// empty cache
 void purge() {
-	string file = "flogger." + season_int() + "." + my_name().to_lower_case() + ".txt";
 	string[int] memory;
-	file_to_map(file, memory);
-	foreach f in memory
-		remove memory[f];
-	if (memory.map_to_file(file))
+	if (memory.map_to_file(cache_file))
 		print("Purged.");
 	else
-		abort("failed to save file" + file);
-}
-
-void recolor() {
-	string file = "flogger." + my_name().to_lower_case() + ".pref";
-	string[string] memory;
-	file_to_map(file, memory);
-	switch (memory["colors"]) {
-		case "nored"	: memory["colors"] = "nogreen";	break;
-		case "nogreen"	: memory["colors"] = "noblue";	break;
-		default			: memory["colors"] = "nored";
-	}
-	if (memory.map_to_file(file))
-		print("Changed color mode.");
-	else
-		abort("failed to save file" + file);
+		abort("failed to save file" + cache_file);
 }
 
 void main(string args) {
+	static string[string] flags = {
+		"backup"	: "copy cache to a backup",
+		"purge"		: "empty the cache",
+	};
 	if (!(flags contains args.to_lower_case())) {
 		print("flogger what?", "red");
-		help();
+		foreach f in flags
+			print("flogger " + f + " -- " + flags[f]);
 	}
 	else if ($strings[backup,purge] contains args.to_lower_case() && season_int() == 0)
 		print("It's off-season.", "red");
