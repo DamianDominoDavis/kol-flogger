@@ -45,10 +45,31 @@ float out_of(float a,float b) {
 	return (a+b==0)? 0 : (100.0 * a) / (a + b);
 }
 
+int dateDifference(string d1, string d2) {
+	static int[int] daysUpToMonth = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 };
+	static int[int] daysUpToMonthLeapYear = { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335 };
+	int daysOffsetFromOrigin(string d) {
+		print(d);
+		string[int] groops = d.split_string("-");
+		int year = groops[0].to_int();
+		int month = groops[1].to_int();
+		int day = groops[2].to_int();
+		year--;
+		int numOfLeapsYear = year / 4 - year / 100 + year / 400;
+		if (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0))
+			return year * 365 + numOfLeapsYear + daysUpToMonthLeapYear[month - 1] + day - 1;
+		else
+			return year * 365 + numOfLeapsYear + daysUpToMonth[month - 1] + day - 1;
+	}
+	int daysOffset = daysOffsetFromOrigin(d1);
+	int daysOffset2 = daysOffsetFromOrigin(d2);
+	return (daysOffset2 - daysOffset);
+}
+
 void main() {
 	// override the rules
 	// only when it's seasonal
-	// and we've been fighting
+	// and we've been fightingrule
 	string page = visit_url("peevpee.php?place=rules").to_string();
 	string[int] log = visit_url("peevpee.php?place=logs&mevs=0&oldseason=0&showmore=1", false).xpath('//table//table//table//table//tr');
 	if (season_int() == 0 || log.count() < 2) {
@@ -144,7 +165,24 @@ void main() {
 			"</style>"
 		);
 
-		page.split_string("<tr><th>Name</th>")[0].write();
+		string[int] bookends = {"<p><b>Current Season: </b>"+season_int()+"<br />", "<p><b>Active Mini Competitions:"};
+		string header = page.split_string(bookends[0])[0];
+		header.write();
+		string intro = page.xpath("//table//table//p[2]")[0];
+		string[int,int] dates = intro.group_string("\\d{4}-\\d*-\\d*");
+		string fmt = "yyyy-MM-dd";
+		string today_date = now_to_string(fmt);
+		string freeze_date = dates[1,0];
+		string end_date = dates[0,0];
+		int til_freeze = dateDifference(today_date, freeze_date);
+		int til_end = dateDifference(today_date, end_date);
+		intro = get_property("currentPVPSeason");
+		intro = intro.char_at(0).to_upper_case() + intro.substring(1);
+		intro = `<center><p>Season {season_int()}: <b>{intro} Season</b>! `
+			+ `Leaderboards freeze in <b>{til_freeze}</b> days. `
+			+ `Season ends in <b>{til_end}</b> days. `
+			+ `<b>Happy hunting!</b><br /></p></center><p><table>`;
+		intro.write();
 
 		int total_attacks;
 		int total_defends;
@@ -154,11 +192,11 @@ void main() {
 			else
 				total_defends += scores[mini,attacking,win];
 		}
-		foreach i,s in page.xpath("//table//table//table//tr") {
+		foreach i,tr in page.xpath("//table//table//table//tr") {
 			if (i == 0)
-				s = s.append_child("<tr>(.+)</tr>", "<th>Attacking</th><th>Defending</th>");
+				tr = tr.append_child("<tr>(.+)</tr>", "<th>Attacking</th><th>Defending</th>");
 			else {
-				string mini = s.xpath("//b/text()")[0].stance_name();
+				string mini = tr.xpath("//b/text()")[0].stance_name();
 				int atk_wins;
 				int atk_loss;
 				int def_wins;
@@ -179,9 +217,8 @@ void main() {
 				float favor_def = (total_defends <1) ? 0 : (100 * 10 / 6.0) * (to_float(def_wins + def_loss) / total_defends - 1.0 / 12);
 				//float rate_atk = (100) * (to_float(atk_wins + atk_loss) * 7.0 / total_attacks);
 				//float rate_def = (100) * (to_float(def_wins + def_loss) * 7.0 / total_defends);
-				s = s.append_child('<tr class="small">\(.+\)</tr>',
+				tr = tr.append_child('<tr class="small">\(.+\)</tr>',
 					`<td align="center" style="white-space: nowrap;">`+
-						# 100 * (((atk_wins + atk_loss) * 7.0 / total_attacks - 7.0 / 12))
 						`<small><strong>{total_attacks>0 ? favor_atk.to_string("%+.0f") : '0'} favor ({atk_wins}:{atk_loss})</strong></small>`+
 						`<span style="background-color:{colorize(win_rate)};"}>{win_rate.to_string("%.1f")}%</span>`+
 					`</td>`+
@@ -190,15 +227,13 @@ void main() {
 						`<span style="background-color:{colorize(loss_rate)};"}>{loss_rate.to_string("%.1f")}%</span>`+
 					`</td>`);
 			}
-			s.write();
+			tr.write();
 		}
 
-		string outro = "</table><p><small>" + page.split_string("</td></tr></table><p><small>")[1];
-		string footnote = "</small></p><p><small>** Favor measures how popular the mini-competitions are. Higher favor means chosen more often when attacking. </small></p>"
-						+ "<p><small>*** Stats above are calculated over your last " + scanThisMany + " fights. Change this number with CLI command <code>flogger history</code>.</small></p>"
-						+ `<p><small>You won {cumulative[true,true]} / {cumulative[true,true]+cumulative[true,false]} attacks ({cumulative[true,true].out_of(cumulative[true,false]).to_string('%.1f%%')}) `
-						+ `and {cumulative[false,true]} / {cumulative[false,true]+cumulative[false,false]} defends ({cumulative[false,true].out_of(cumulative[false,false]).to_string('%.1f%%')}).</br>`
-						+ `Net: {fame.to_string('%+d')} fame, {swagger} swagger ({perfect} from flawless victory), {winningness.to_string('%+d')} winningness, and {substats} substats.</small></p>`;
-		outro.append_child("<p>(.+)</p>", footnote).write();
+		string outro = `</tr></table><p><small>You won {cumulative[true,true]} / {cumulative[true,true]+cumulative[true,false]} attacks ({cumulative[true,true].out_of(cumulative[true,false]).to_string('%.1f%%')}) `
+			+ `and {cumulative[false,true]} / {cumulative[false,true]+cumulative[false,false]} defends ({cumulative[false,true].out_of(cumulative[false,false]).to_string('%.1f%%')}).</br>`
+			+ `Net: {fame.to_string('%+d')} fame, {swagger} swagger ({perfect} from flawless victory), {winningness.to_string('%+d')} winningness, and {substats} substats.</small></p>`
+			+ `<center><a href="peevpee.php?place=logs&mevs=0&oldseason=0&showmore=1">Archives</a> &mdash; <a href="peevpee.php">Back to The Colosseum</a></center></td></tr></table></td></tr></table></center></body></html>`;
+		outro.write();
 	}
 }
