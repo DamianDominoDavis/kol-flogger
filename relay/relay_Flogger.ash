@@ -173,7 +173,7 @@ void main() {
 		intro = `<center><p>Season {season_int()}: <b>{intro} Season</b>! `
 			+ (til_freeze > 0 ? `Leaderboards freeze in <b>{til_freeze}</b> days. ` : "")
 			+ `Season ends in <b>{til_end}</b> days. `
-			+ `<b>Happy hunting!</b><br /></p></center><p><table>`;
+			+ `<b>Happy hunting!</b><br /></p></center><p><table style="display: inline;">`;
 		intro.write();
 
 		// table rows
@@ -218,26 +218,47 @@ void main() {
 			out_of(cumulative[true,true], cumulative[true,false]),
 			out_of(cumulative[false,true], cumulative[false,false])
 		};
-		write(`<tr class="small"><td colspan="" align="center" valign="top" nowrap="nowrap"><p><b><big><big>Overall</big></big></b></td><td></td><td></td><td></td>`
-				+ `<td align="center" style="white-space: nowrap;"><big><strong>{cumulative[true,true]}:{cumulative[true,false]}</strong></big><span style="background-color:{colorize(overall[0])};"}><big>{overall[0].to_string("%.1f")}%</big></span></td>`
-				+ `<td align="center" style="white-space: nowrap;"><big><strong>{cumulative[false,true]}:{cumulative[false,false]}</strong></big><span style="background-color:{colorize(overall[1])};"}><big>{overall[1].to_string("%.1f")}%</big></span></td>`
+		// final row
+		write(`<tr class="small">`
+				+ `<td colspan="" align="center" valign="top" nowrap="nowrap">`
+				+ 	`<p><b><big><big>Overall</big></big></b></td>`
+				+ `<td></td><td></td><td></td>`
+				+ `<td align="center" style="white-space: nowrap;">`
+					+ `<big><strong>{cumulative[true,true]}:{cumulative[true,false]}</strong></big>`
+					+ `<span style="background-color:{colorize(overall[0])};"}><big>{overall[0].to_string("%.1f")}%</big></span>`
+				+ `</td><td align="center" style="white-space: nowrap;">`
+					+ `<big><strong>{cumulative[false,true]}:{cumulative[false,false]}</strong></big>`
+					+ `<span style="background-color:{colorize(overall[1])};"}><big>{overall[1].to_string("%.1f")}%</big></span>`
+				+ `</td>`
 			+ `</tr>`
 		);
 
-		// page bottom
+		// bottom line
+		float fights = cumulative[true,true] + cumulative[true,false];
+		string outro = `</tr></table><center>`
+			+ `<p><small>Average Fight: {(fame/fights).to_string('%+.1f')} fame, {(swagger/fights).to_string("%.1f")} swagger (including a {(perfect * 100 / fights).to_string("%.1f")}% chance of flawless victory)</small><br />`
+			+ `<small>Average Win: {(fame.to_float()/cumulative[true,true]).to_string('%+.1f')} fame, {(swagger.to_float()/cumulative[true,true]).to_string("%.1f")} swagger (including a {(perfect * 100.0 / cumulative[true,true]).to_string("%.1f")}% chance of flawless victory)</small><br />`
+			+ `<span><small>Net: {fame.to_string('%+d')} fame, {swagger} swagger ({perfect} from flawless victory), {winningness.to_string('%+d')} winningness, and {substats} substats</small></p>`;
+
+		// form
 		string make_option(string value, string label) {
 			return '<option value="' + value + '"' + (colors == value ? 'selected="true"' : '') + '>' + label + '</option>';
 		}
-		string outro = `</tr></table><center><p><small>Net: {fame.to_string('%+d')} fame, {swagger} swagger ({perfect} from flawless victory), {winningness.to_string('%+d')} winningness, and {substats} substats</small></p>`
-			+ `<form>Score <input type="text" id="freshness" name="freshness" value="{freshness}" size="5" maxlength="4" /> <label for="freshness"> latest fights.</label><br />`
-			+ `Show <select name="colors" id="colors">`
-				+ make_option("noblue", "green/red")
-				+ make_option("nored", "green/blue")
-				+ make_option("nogreen", "blue/red")
-			+ `</select> <label for="colors">colors.</label><br />`
-			+ `<button type="submit">Reload</button></form>`
-			+ `<p><a href="peevpee.php?place=logs&mevs=0&oldseason=0&showmore=1">Archives</a> &mdash; <a href="peevpee.php">Back to The Colosseum</a><br /></p></center>`
-			+ "</td></tr></table></td></tr></table></center></body></html>";
+		outro += `<form>Score `
+					+ `<input type="text" id="freshness" name="freshness" value="{freshness}" size="5" maxlength="4" /> `
+					+ `<label for="freshness"> latest fights.</label><br />`
+					+ `Show <select name="colors" id="colors">`
+						+ make_option("noblue", "green/red")
+						+ make_option("nored", "green/blue")
+						+ make_option("nogreen", "blue/red")
+						+ make_option("blackwhite", "white/black")
+					+ `</select>`
+					+ `<label for="colors">colors.</label><br />`
+					+ `<button type="submit">Reload</button>`
+				+ `</form>`
+		// links
+				+ `<a href="peevpee.php?place=logs&mevs=0&oldseason=0&showmore=1">Archives</a> &mdash; <a href="peevpee.php">Back to The Colosseum</a></span></center>`
+			+ "</td></tr></table></td></tr></table></span></center></body></html>";
 		outro.write();
 	}
 }
