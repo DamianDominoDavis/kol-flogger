@@ -49,7 +49,6 @@ int dateDifference(string d1, string d2) {
 	static int[int] daysUpToMonth = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 };
 	static int[int] daysUpToMonthLeapYear = { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335 };
 	int daysOffsetFromOrigin(string d) {
-		print(d);
 		string[int] groops = d.split_string("-");
 		int year = groops[0].to_int();
 		int month = groops[1].to_int();
