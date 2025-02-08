@@ -16,13 +16,14 @@ int season_int() {
 		matcher m = create_matcher("\(\\d+\)", season_str);
 		if (m.find())
 			season = m.group(1).to_int();
+		visit_url("peevpee.php?place=shop");
 	}
 	return season;
 }
 
-static string cache_file = "flogger." + season_int() + "." + my_name().to_lower_case() + ".txt";
-static string prefs_file = "flogger." + my_name().to_lower_case() + ".pref";
 boolean[int] debug_fite_ids = $ints[-1];
+string cache_file = "flogger." + season_int() + "." + my_name().to_lower_case() + ".txt";
+string prefs_file = "flogger." + my_name().to_lower_case() + ".pref";
 
 // process mini names as they appear on the info booth page
 string stance_name(string s) {
