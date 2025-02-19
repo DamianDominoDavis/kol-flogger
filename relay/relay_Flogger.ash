@@ -152,7 +152,7 @@ void main() {
 			"table table table td span { display:block; width:8em; border: 1px solid black; padding: 2px 0; font-weight: bold; color: white; text-shadow: 0px 0px 5px black;}"+
 			"</style>"
 		);
-		string[int] bookends = {"<p><b>Current Season: </b>"+season_int()+"<br />", "<p><b>Active Mini Competitions:"};
+		string[int] bookends = {"<p><b>Current Season: </b>"+season_int(), "<p><b>Active Mini Competitions:"};
 		string header = page.split_string(bookends[0])[0];
 		header = header.replace_string("Information Booth", "Flogger");
 		header.write();
