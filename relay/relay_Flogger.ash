@@ -41,7 +41,7 @@ int days_between(string d1, string d2) {
 		boolean leap_this_year = (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0));
 		return year * 365 + leap_days + days_since_jan1(month, leap_this_year) + day;
 	}
-	return days_since_year1(d2) - days_since_year1(d1);
+	return days_since_year1(d2) - days_since_year1(d1) - 1;
 }
 
 void main() {
