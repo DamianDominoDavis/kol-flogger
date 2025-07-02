@@ -156,7 +156,9 @@ void main() {
 		string header = page.split_string(bookends[0])[0];
 		header = header.replace_string("Information Booth", "Flogger");
 		header.write();
-		string intro = page.xpath("//table//table//p[2]")[0];
+		string intro = get_property("currentPVPSeason") == "drunken"
+			? page.xpath("//table//table//table//p")[0]
+			: page.xpath("//table//table//p[2]")[0];
 		string[int,int] dates = intro.group_string("\\d{4}-\\d*-\\d*");
 		string fmt = "yyyy-MM-dd";
 		string today_date = now_to_string(fmt);
@@ -173,7 +175,9 @@ void main() {
 		intro.write();
 
 		// table rows
-		foreach i,tr in page.xpath("//table//table//table//tr") {
+		foreach i,tr in (get_property("currentPVPSeason") == "drunken"
+			? page.xpath("//table//table//table[2]//tr")
+			: page.xpath("//table//table//table//tr")) {
 			if (i == 0)
 				tr = tr.append_child("<tr>(.+)</tr>", "<th>Attacking</th><th>Defending</th>");
 			else {
