@@ -156,9 +156,12 @@ void main() {
 		string header = page.split_string(bookends[0])[0];
 		header = header.replace_string("Information Booth", "Flogger");
 		header.write();
-		string intro = get_property("currentPVPSeason") == "drunken"
-			? page.xpath("//table//table//table//p")[0]
-			: page.xpath("//table//table//p[2]")[0];
+		string[int] intro_group = get_property("currentPVPSeason") == "drunken"
+			? page.xpath("//table//table//table//p")
+			: page.xpath("//table//table//p[2]");
+		string intro;
+		if (count(intro_group) > 0)
+			intro = intro_group[0];
 		string[int,int] dates = intro.group_string("\\d{4}-\\d*-\\d*");
 		string fmt = "yyyy-MM-dd";
 		string today_date = now_to_string(fmt);
@@ -236,10 +239,10 @@ void main() {
 		// bottom line
 		float fights = cumulative[true,true] + cumulative[true,false];
 		string outro = `</tr></table><center><p>`;
+		if (cumulative[true,true] > 0)
+				outro += `<small>Average Win: {(fame.to_float()/cumulative[true,true]).to_string('%+.1f')} fame, {(swagger.to_float()/cumulative[true,true]).to_string("%.1f")} swagger (including a {(perfect * 100.0 / cumulative[true,true]).to_string("%.1f")}% chance of flawless victory)</small><br />`;
 		if (fights > 0)
-			outro += `<small>Average Attack: {(fame/fights).to_string('%+.1f')} fame, {(swagger/fights).to_string("%.1f")} swagger (including a {(perfect * 100 / fights).to_string("%.1f")}% chance of flawless victory)</small><br />`
-				+ `<small>Average Win: {(fame.to_float()/cumulative[true,true]).to_string('%+.1f')} fame, {(swagger.to_float()/cumulative[true,true]).to_string("%.1f")} swagger (including a {(perfect * 100.0 / cumulative[true,true]).to_string("%.1f")}% chance of flawless victory)</small><br />`
-				+ `<span><small>Net: {fame.to_string('%+d')} fame, {swagger} swagger ({perfect} from flawless victory), {winningness.to_string('%+d')} winningness, and {substats} substats</small>`;
+				outro += `<span><small>Net: {fame.to_string('%+d')} fame, {swagger} swagger ({perfect} from flawless victory), {winningness.to_string('%+d')} winningness, and {substats} substats</small>`;
 
 		// form
 		string make_option(string value, string label) {
